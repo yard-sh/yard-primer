@@ -40,6 +40,7 @@ Plan requirements:
       migrations/
         0001_init.sql       courses, sections, progress
         0002_seed.sql       five sample courses, so the catalog isn't empty
+        0003_more_courses.sql  twenty more, across all seven subjects
     app/                    the deployable bundle (the services[] entry with dir: app)
       _service.js           the whole backend: routes, access rules, admin API
       index.html            app shell
@@ -225,8 +226,9 @@ the place to buy Premium end to end without any money moving.
 
 ## Data lifecycle
 
-- `0002_seed.sql` runs once per database. A sample course you delete stays
-  deleted.
+- The sample courses (`0002_seed.sql` and `0003_more_courses.sql`, 25 in
+  all) are migrations, so each file runs once per database. A sample course
+  you delete stays deleted.
 - Deleting a course removes its sections and everyone's progress in it.
   Deleting a section removes the progress on that section.
 - Never edit an applied migration. Add a new numbered file instead.
