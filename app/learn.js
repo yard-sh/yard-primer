@@ -34,7 +34,6 @@ export async function renderCatalog(ctx) {
   const intro = el(
     "section",
     { class: "intro" },
-    el("p", { class: "label", text: plural(courses.length, "course") }),
     el("h1", { text: "Courses" }),
     el("p", {
       text: me.authenticated

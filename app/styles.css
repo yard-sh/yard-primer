@@ -864,7 +864,7 @@ main:focus {
 }
 
 .intro h1 {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: clamp(48px, 7vw, 96px);
   font-weight: 700;
   line-height: 0.95;
