@@ -124,11 +124,12 @@ accent colour (the stripe on its cards, its progress bars and status icons)
 is a `[data-subject="…"]` rule in both stylesheets, with a lighter variant
 for dark mode.
 
-**Full width.** Both the app and the landing page span the whole window, with
-side padding that grows with it (`--gutter` in each stylesheet). The course
-grid adds columns as the window widens, and on wide screens a course page
-puts the course on the left and its sections on the right. Only running text
-keeps a reading width (`--measure`), so lessons stay comfortable to read.
+**Layout.** The app spans the whole window, with side padding that grows with
+it (`--gutter`). The course grid adds columns as the window widens, and on
+wide screens a course page puts the course on the left and its sections on
+the right. Only running text keeps a reading width (`--measure`), so lessons
+stay comfortable to read. The landing page sits in a wide centred column
+(`--wrap` in its stylesheet), with the pricing section centred within it.
 
 **Relative URLs only.** The app is mounted at `/<slug>/app/`, so it calls
 `fetch("api/courses")`, never `/api/courses`, and routes live in the hash

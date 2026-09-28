@@ -1,6 +1,6 @@
-/* Primer landing page. Same system as the app (app/styles.css): a clean,
- * full-width layout on white, courses as cards, and familiar section status
- * icons. The two bundles are deployed separately, so the tokens and the
+/* Primer landing page. Same system as the app (app/styles.css): a clean
+ * layout on white, courses as cards, and familiar section status icons. The
+ * app runs full-width; this page sits in a wide centred column instead. The two bundles are deployed separately, so the tokens and the
  * shared pieces (cards, status icons, progress bars) are repeated here rather
  * than shared.
  */
@@ -28,6 +28,7 @@
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
   --gutter: clamp(16px, 4vw, 64px);
+  --wrap: 1440px;
 
   color-scheme: light;
 }
@@ -168,6 +169,8 @@ button {
 
 .wrap {
   width: 100%;
+  max-width: var(--wrap);
+  margin: 0 auto;
   padding: 0 var(--gutter);
 }
 
@@ -921,6 +924,17 @@ button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+}
+
+/* The pricing section is centred: heading over two plans of equal width. */
+.band--center .band__head {
+  justify-content: center;
+  text-align: center;
+}
+
+.band--center .plans {
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .plan {
