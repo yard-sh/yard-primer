@@ -11,7 +11,7 @@
 -- There are no foreign keys either: _service.js deletes a course's sections
 -- and progress itself, in one batch, so nothing depends on PRAGMA settings.
 
--- A course is one line on the map. subject is a key of SUBJECTS in
+-- A course is one card in the catalog. subject is a key of SUBJECTS in
 -- _service.js; tier is 'free' or 'premium'. Drafts (published = 0) are only
 -- visible to admins. position orders the catalog.
 CREATE TABLE IF NOT EXISTS courses (

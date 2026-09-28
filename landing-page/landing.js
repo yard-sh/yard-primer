@@ -9,7 +9,7 @@
 //   __yard/auth/logout?return=/      ends the Primer session, back here
 //
 // The app's service is access=public, so app/api/courses answers anonymous
-// visitors too; that is what fills the lines below with real courses. Every
+// visitors too; that is what fills the course cards with real courses. Every
 // URL is relative so the page works at <team>.yard.sh/<slug>/, inside a
 // /@sandbox/, and on a custom domain.
 (function () {
@@ -146,44 +146,47 @@
 
   /* ---------------------------------------------------------- catalog */
 
-  // Each course is a line: a numbered bullet in its subject's colour, then a
-  // strip map of its stops. Same shapes as the app (see app/ui.js).
-  var MAX_LINES = 6;
-  var list = document.getElementById("courses");
+  // The same course cards as the app's catalog (see app/ui.js).
+  var MAX_CARDS = 8;
+  var grid = document.getElementById("course-grid");
 
-  function strip(course) {
-    var stops = course.stops || [];
-    var cls = "strip" + (course.access === "premium" ? " is-locked" : "") + (stops.length > 8 ? " is-dense" : "");
-    var ol = el("ol", { class: cls, style: "--n: " + Math.max(stops.length, 1), "aria-hidden": "true" });
-    stops.forEach(function (s) {
-      ol.appendChild(
-        el("li", { class: "stop" }, [
-          el("span", { class: "stop__dot", "data-status": s.status }),
-          el("span", { class: "stop__name", text: s.title }),
+  function card(course, subject) {
+    var locked = course.access === "premium";
+    var p = course.progress;
+    var foot = el("span", { class: "card__foot" }, [
+      el("span", {
+        class: "label",
+        text: course.sections + (course.sections === 1 ? " section" : " sections") + " · " + course.minutes + " min",
+      }),
+    ]);
+    if (p && course.sections && !locked && p.completed + p.in_progress > 0) {
+      var pct = Math.round((p.completed / course.sections) * 100);
+      foot.appendChild(
+        el("span", { class: "card__progress" }, [
+          el("span", { class: "progress" }, [el("span", { class: "progress__bar", style: "width: " + pct + "%" })]),
+          el("span", { class: "label", text: p.completed + " of " + course.sections + " done" }),
         ]),
       );
-    });
-    return ol;
-  }
-
-  function lineRow(course, number, subject) {
-    var facts = [subject ? subject.name : course.subject, course.sections + (course.sections === 1 ? " stop" : " stops"), course.minutes + " min"];
+    }
     return el(
       "a",
-      { class: "line-row", "data-subject": course.subject, href: APP + "#/course/" + encodeURIComponent(course.id) },
+      { class: "card", "data-subject": course.subject, href: APP + "#/course/" + encodeURIComponent(course.id) },
       [
-        el("span", { class: "line-row__head" }, [
-          el("span", { class: "bullet", text: String(number), "aria-hidden": "true" }),
-          el("span", { class: "line-row__title", text: course.title }),
+        el("span", { class: "card__top" }, [
+          el("span", { class: "card__subject" }, [
+            el("span", { class: "dot", "aria-hidden": "true" }),
+            document.createTextNode(subject ? subject.name : course.subject),
+          ]),
           course.tier === "premium" ? el("span", { class: "badge", text: "Premium" }) : null,
-          el("span", { class: "line-row__facts label", text: facts.join(" · ") }),
         ]),
-        (course.stops || []).length ? strip(course) : null,
+        el("span", { class: "card__title", text: course.title }),
+        course.summary ? el("span", { class: "card__summary", text: course.summary }) : null,
+        foot,
       ],
     );
   }
 
-  if (list) {
+  if (grid) {
     getJSON("api/courses").then(function (data) {
       if (!data || !data.courses || !data.courses.length) return;
       var subjects = {};
@@ -194,14 +197,14 @@
         return c.published;
       });
       if (!published.length) return;
-      list.replaceChildren.apply(
-        list,
-        published.slice(0, MAX_LINES).map(function (c, i) {
-          return el("li", {}, [lineRow(c, i + 1, subjects[c.subject])]);
+      grid.replaceChildren.apply(
+        grid,
+        published.slice(0, MAX_CARDS).map(function (c) {
+          return el("li", {}, [card(c, subjects[c.subject])]);
         }),
       );
-      var all = document.getElementById("lines-all");
-      if (all && published.length > MAX_LINES) all.textContent = "See all " + published.length + " lines →";
+      var all = document.getElementById("courses-all");
+      if (all && published.length > MAX_CARDS) all.textContent = "See all " + published.length + " courses →";
       if (window.yard && window.yard.refresh) window.yard.refresh();
     });
   }

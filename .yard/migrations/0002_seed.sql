@@ -1,4 +1,4 @@
--- Sample courses, so a new Primer has some lines on the map. Edit or delete
+-- Sample courses, so a new Primer has something in its catalog. Edit or delete
 -- them from the admin panel: this file runs once per database (Yard records it
 -- in _yard_migrations), so a course you delete never comes back. INSERT OR
 -- IGNORE makes a re-run after a mid-file failure harmless.

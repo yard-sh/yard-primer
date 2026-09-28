@@ -22,7 +22,7 @@ const PREMIUM_TIER = "Premium";
 
 // The subjects a course can belong to. The app and the landing page read this
 // list from api/me and api/courses, so it lives here and nowhere else. Each
-// key is also a line colour in both stylesheets ([data-subject="..."]); a key
+// key is also a colour in both stylesheets ([data-subject="..."]); a key
 // without one is drawn in ink.
 const SUBJECTS = [
   { key: "physics", name: "Physics" },
@@ -296,20 +296,21 @@ async function listCourses(env, me) {
     for (const row of each.results) status.set(row.section_id, row.status);
   }
 
-  // Every course's stops (section titles, never bodies) so the catalog can
-  // draw each line with its station names. The syllabus is public anyway.
-  const stops = new Map();
+  // Every course's outline (section titles and the viewer's status, never
+  // bodies), so the catalog can say which section comes next. The syllabus
+  // is public anyway.
+  const outline = new Map();
   const sections = await env.DB.prepare(
     "SELECT id, course_id, title FROM sections ORDER BY course_id, position, created_at",
   ).all();
   for (const s of sections.results) {
-    if (!stops.has(s.course_id)) stops.set(s.course_id, []);
-    stops.get(s.course_id).push({ id: s.id, title: s.title, status: status.get(s.id) || "not_started" });
+    if (!outline.has(s.course_id)) outline.set(s.course_id, []);
+    outline.get(s.course_id).push({ id: s.id, title: s.title, status: status.get(s.id) || "not_started" });
   }
 
   return json({
     subjects: SUBJECTS,
-    courses: results.map((row) => ({ ...courseView(row, me, mine.get(row.id)), stops: stops.get(row.id) || [] })),
+    courses: results.map((row) => ({ ...courseView(row, me, mine.get(row.id)), outline: outline.get(row.id) || [] })),
   });
 }
 
@@ -517,9 +518,9 @@ async function createCourse(request, env, me) {
   const tier = tierOf(body.tier === undefined ? "free" : body.tier);
 
   const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM courses").first();
-  if (count.n >= MAX_COURSES) throw new Refusal(409, "too_many", `the map holds ${MAX_COURSES} courses at most`);
+  if (count.n >= MAX_COURSES) throw new Refusal(409, "too_many", `the catalog holds ${MAX_COURSES} courses at most`);
 
-  // New courses start as drafts at the end of the map. INSERT OR IGNORE
+  // New courses start as drafts at the end of the catalog. INSERT OR IGNORE
   // plus a retry covers the (very) rare id collision without a second query.
   for (let attempt = 0; attempt < 3; attempt++) {
     const id = makeId(title);

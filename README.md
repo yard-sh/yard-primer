@@ -4,13 +4,12 @@
 <a href="https://dash.yard.sh/projects?action=create&repo=https%3A%2F%2Fgithub.com%2Fyard-sh%2Fyard-primer"><img src="https://yard.sh/create-in-yard.png" width="200" alt="Create in Yard" /></a>
 </p>
 
-A small online course site for STEM subjects, hosted end to end on Yard,
-drawn as a transit map. Every course is a coloured line and every section is a
-stop on it. Learners sign in, start a course, and ride it stop by stop. Each
-stop is *not started* (an empty station), *in progress* (a bullseye) or
-*completed* (a filled station), and that progress is saved to their account.
-A Premium course a learner can't open yet is drawn as a dashed line. Some courses are
-Free and some need **Premium**, a $20 a month subscription. The project's
+A small online course site for STEM subjects, hosted end to end on Yard.
+Courses are listed as a grid of cards, and each course has sections.
+Learners sign in, start a course, and work through its sections. Each section
+is *not started*, *in progress* or *done*, and that progress is saved to their
+account. Some courses are Free and some need **Premium**, a $20 a month
+subscription. The project's
 team edits everything from a built-in admin panel.
 
 It has three parts:
@@ -40,16 +39,16 @@ Plan requirements:
       settings.json         the service, the landing page, and the Free and Premium tiers
       migrations/
         0001_init.sql       courses, sections, progress
-        0002_seed.sql       five sample courses, so the map isn't empty
+        0002_seed.sql       five sample courses, so the catalog isn't empty
     app/                    the deployable bundle (the services[] entry with dir: app)
       _service.js           the whole backend: routes, access rules, admin API
       index.html            app shell
       app.js                boot, hash router, header, refresh on focus
-      ui.js                 API helper, line bullets, stops, strip maps, routes, sheets
+      ui.js                 API helper, course cards, section lists, status icons, sheets
       learn.js              catalog, course page, reader
       admin.js              dashboard, course editor, section editor
       markdown.js           the safe Markdown renderer, plus KaTeX for math
-      styles.css            design tokens (light and dark), line colours, the map's parts
+      styles.css            design tokens (light and dark), full-width layout, cards
     landing-page/           the public page: live catalog, how it works, pricing
 
 ## How it fits together
@@ -119,11 +118,17 @@ It also supports:
 - `> [!NOTE]`, `[!TIP]`, `[!WARNING]` and `[!EXAMPLE]` callouts
 - tables, lists and fenced code
 
-**Subjects are lines.** `SUBJECTS` in `_service.js` lists each subject's key
-and name, and the app and the landing page read that list from the API. Each
-subject's line colour is a `[data-subject="…"]` rule in both stylesheets,
-with a lighter variant for dark mode. A course's bullet number is its place
-in the catalog.
+**Subjects.** `SUBJECTS` in `_service.js` lists each subject's key and name,
+and the app and the landing page read that list from the API. Each subject's
+accent colour (the stripe on its cards, its progress bars and status icons)
+is a `[data-subject="…"]` rule in both stylesheets, with a lighter variant
+for dark mode.
+
+**Full width.** Both the app and the landing page span the whole window, with
+side padding that grows with it (`--gutter` in each stylesheet). The course
+grid adds columns as the window widens, and on wide screens a course page
+puts the course on the left and its sections on the right. Only running text
+keeps a reading width (`--measure`), so lessons stay comfortable to read.
 
 **Relative URLs only.** The app is mounted at `/<slug>/app/`, so it calls
 `fetch("api/courses")`, never `/api/courses`, and routes live in the hash

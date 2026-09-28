@@ -1,6 +1,5 @@
-// Shared pieces: app state, the API helper, DOM helpers, the map's parts
-// (line bullets, stops, strips and routes), and the sheets (plan, sign in,
-// confirm). Everything here builds DOM with
+// Shared pieces: app state, the API helper, DOM helpers, course cards and
+// section lists, and the sheets (plan, sign in, confirm). Everything here builds DOM with
 // textContent; the only HTML string the app ever inserts is the Markdown
 // renderer's output, which escapes its input first.
 
@@ -114,32 +113,11 @@ export async function guard(fn) {
   }
 }
 
-/* ------------------------------------------------------- lines and stops */
-//
-// The map's vocabulary. A course is a line, drawn in its subject's colour and
-// identified by a numbered bullet (its place in the catalog). Its sections
-// are stops. A stop is empty until opened, a bullseye while in progress and
-// filled once completed. A locked Premium line is drawn dashed, like a line
-// still under construction.
+/* ------------------------------------------------- courses and sections */
 
 export function subjectOf(key) {
   const subjects = (state.me && state.me.subjects) || [];
   return subjects.find((s) => s.key === key) || { key, name: key };
-}
-
-// Where a course sits in the catalog, which is its line number.
-export function numberOf(course) {
-  const index = (state.catalog || []).findIndex((c) => c.id === course.id);
-  return index >= 0 ? index + 1 : "";
-}
-
-export function bullet(subjectKey, number, size = "") {
-  return el("span", {
-    class: "bullet" + (size ? " bullet--" + size : ""),
-    "data-subject": subjectKey,
-    text: String(number),
-    "aria-hidden": "true",
-  });
 }
 
 export function badges(course) {
@@ -149,103 +127,94 @@ export function badges(course) {
   ].filter(Boolean);
 }
 
-export function stopDot(status) {
-  return el("span", { class: "stop__dot", "data-status": status, "aria-hidden": "true" });
-}
-
 export const STATUS_LABEL = {
   not_started: "Not started",
   in_progress: "In progress",
   completed: "Done",
 };
 
-// A horizontal strip map: the line, its stops, and (room allowing) their
-// names. Used by the catalog, where the whole row is one link.
-export function strip(course) {
-  const stops = course.stops || [];
-  const done = stops.filter((s) => s.status === "completed").length;
-  const label = course.progress
-    ? `${done} of ${stops.length} stops completed`
-    : `${plural(stops.length, "stop")}`;
+// A section's status as an icon: an empty circle, a half-filled one, or a
+// check. The label next to it (or the row's text) says the same in words.
+export function statusIcon(status) {
+  return el("span", { class: "status-icon", "data-status": status, "aria-hidden": "true" });
+}
+
+// "2 of 4 sections done" as a bar, for signed-in learners.
+export function progressBar(done, total) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
   return el(
-    "ol",
-    {
-      class: "strip" + (course.access === "premium" ? " is-locked" : "") + (stops.length > 8 ? " is-dense" : ""),
-      style: `--n: ${Math.max(stops.length, 1)}`,
-      "data-subject": course.subject,
-      "aria-label": label,
-    },
-    stops.map((s) =>
-      el("li", { class: "stop" }, stopDot(s.status), el("span", { class: "stop__name", text: s.title })),
-    ),
+    "div",
+    { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(total), "aria-valuenow": String(done), "aria-label": "Sections done" },
+    el("span", { class: "progress__bar", style: `width: ${pct}%` }),
   );
 }
 
-// One course in the catalog: bullet, name, facts, and its strip map.
-export function lineRow(course, number) {
+// One course in the catalog grid.
+export function courseCard(course) {
   const subject = subjectOf(course.subject);
-  const stops = course.stops || [];
-  const done = stops.filter((s) => s.status === "completed").length;
-  const facts = [subject.name, plural(course.sections, "stop"), `${course.minutes} min`];
+  const p = course.progress;
+  const done = p ? p.completed : 0;
+  const locked = course.access === "premium";
   return el(
     "a",
-    { class: "line-row", href: `#/course/${course.id}`, "data-subject": course.subject },
+    { class: "card" + (locked ? " is-locked" : ""), href: `#/course/${course.id}`, "data-subject": course.subject },
     el(
       "span",
-      { class: "line-row__head" },
-      bullet(course.subject, number),
-      el("span", { class: "line-row__title", text: course.title }),
-      el("span", { class: "line-row__badges" }, badges(course)),
-      el(
-        "span",
-        { class: "line-row__facts label" },
-        facts.join(" · "),
-        course.progress && course.sections ? el("b", { text: ` · ${done}/${course.sections}` }) : null,
-      ),
+      { class: "card__top" },
+      el("span", { class: "card__subject" }, el("span", { class: "dot", "aria-hidden": "true" }), subject.name),
+      el("span", { class: "card__badges" }, badges(course)),
     ),
-    stops.length ? strip(course) : el("span", { class: "muted", text: "No stops yet." }),
+    el("span", { class: "card__title", text: course.title }),
+    course.summary ? el("span", { class: "card__summary", text: course.summary }) : null,
+    el(
+      "span",
+      { class: "card__foot" },
+      el("span", { class: "label", text: `${plural(course.sections, "section")} · ${course.minutes} min` }),
+      p && course.sections && !locked && p.completed + p.in_progress > 0
+        ? el(
+            "span",
+            { class: "card__progress" },
+            progressBar(done, course.sections),
+            el("span", { class: "label", text: done === course.sections ? "Completed" : `${done} of ${course.sections} done` }),
+          )
+        : null,
+      locked ? el("span", { class: "card__lock label", text: "Unlocks with Premium" }) : null,
+    ),
   );
 }
 
-/* ---------------------------------------------------------------- routes */
-
-// A vertical route: the line runs down the left and every stop is a row, as
-// on the diagram above a train door. Used for a course's syllabus and the
-// reader's sidebar. `current` gets a "You are here" marker.
-export function route(course, sections, { current, compact = false, locked = false } = {}) {
+// A course's sections as a list with status. `current` is marked "Up next".
+// Compact is the reader's sidebar.
+export function sectionList(course, sections, { current, compact = false, locked = false, signedIn = true } = {}) {
   return el(
     "ol",
-    {
-      class: "route" + (compact ? " route--compact" : "") + (locked ? " is-locked" : ""),
-      "data-subject": course.subject,
-      "aria-label": "Stops",
-    },
+    { class: "sections" + (compact ? " sections--compact" : ""), "data-subject": course.subject, "aria-label": "Sections" },
     sections.map((s, i) =>
       el(
         "li",
-        { class: "route__stop", "data-section": s.id },
+        { "data-section": s.id },
         el(
           "a",
           {
-            class: "route__link",
+            class: "sections__row",
             href: `#/course/${course.id}/${s.id}`,
             "aria-current": compact && s.id === current ? "page" : null,
           },
-          stopDot(s.status),
+          statusIcon(s.status),
+          compact ? null : el("span", { class: "sections__no", text: pad(i + 1) }),
           el(
             "span",
-            { class: "route__name" },
+            { class: "sections__title" },
             el("span", { text: s.title }),
-            !compact && s.id === current ? el("span", { class: "here", text: "You are here" }) : null,
+            !compact && s.id === current ? el("span", { class: "badge badge--next", text: "Up next" }) : null,
           ),
+          compact ? null : el("span", { class: "sections__mins label", text: `${s.minutes} min` }),
           compact
             ? null
-            : el(
-                "span",
-                { class: "route__meta label" },
-                el("span", { text: `${pad(i + 1)} · ${s.minutes} min` }),
-                el("span", { class: "route__status", text: locked ? "Locked" : STATUS_LABEL[s.status] }),
-              ),
+            : el("span", {
+                class: "sections__status label",
+                text: locked ? "Locked" : signedIn ? STATUS_LABEL[s.status] : "",
+              }),
         ),
       ),
     ),
@@ -306,14 +275,10 @@ export function showSignIn(message) {
 export function showPlan() {
   const me = state.me || {};
   const premium = (state.catalog || []).filter((c) => c.tier === "premium" && c.published);
-  const tiles = premium.slice(0, 6).map((c) => bullet(c.subject, numberOf(c)));
-  const count = premium.length
-    ? `all ${plural(premium.length, "Premium line")} on the map`
-    : "every Premium line";
+  const count = premium.length ? `all ${plural(premium.length, "Premium course")}` : "every Premium course";
   openSheet(
     el("p", { class: "label", text: me.premium_tier || "Premium" }),
-    el("h2", { text: "This line needs a Premium pass." }),
-    tiles.length ? el("div", { class: "sheet__tiles" }, tiles) : null,
+    el("h2", { text: "This course is part of Premium." }),
     el("p", { text: `${me.premium_tier || "Premium"} opens ${count}, plus each new one the day it is published.` }),
     el(
       "div",
@@ -356,7 +321,7 @@ export function confirmSheet({ label, title, body, confirm, danger = false }) {
 
 /* ------------------------------------------------------------- fallbacks */
 
-export function notFound(what = "That stop isn't on the map.") {
+export function notFound(what = "We couldn't find that.") {
   return el(
     "div",
     { class: "wrap" },
@@ -365,8 +330,8 @@ export function notFound(what = "That stop isn't on the map.") {
       { class: "empty", style: "margin-top:48px" },
       el("p", { class: "label", text: "404" }),
       el("h2", { text: what }),
-      el("p", { text: "It may have been moved, closed, or never existed." }),
-      el("a", { class: "btn btn--primary", href: "#/", text: "Back to the map" }),
+      el("p", { text: "It may have been moved, unpublished, or never existed." }),
+      el("a", { class: "btn btn--primary", href: "#/", text: "Back to the courses" }),
     ),
   );
 }

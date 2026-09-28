@@ -1,11 +1,11 @@
-// The admin panel: every line with its stats, the course editor and
+// The admin panel: every course with its stats, the course editor and
 // the section editor.
 //
 // Who counts as an admin is decided by the server alone: everyone on the
 // project's Yard team (X-Yard-Entitlement: owner). The app hides the Admin
 // link from everyone else, but every route under api/admin checks again.
 
-import { state, api, el, guard, toast, pad, plural, bullet, subjectOf, signInLink, confirmSheet } from "./ui.js";
+import { state, api, el, guard, toast, pad, plural, subjectOf, signInLink, confirmSheet } from "./ui.js";
 import { renderMarkdown, typeset } from "./markdown.js";
 
 // Matches MAX_BODY and friends in _service.js, which enforces them.
@@ -96,7 +96,7 @@ export async function renderAdmin(ctx) {
     ].map(([label, value]) => el("div", {}, el("dt", { text: label }), el("dd", { text: String(value) }))),
   );
 
-  // New course: a draft at the end of the map, then straight to its editor.
+  // New course: a draft at the end of the catalog, then straight to its editor.
   const title = el("input", { class: "input", name: "title", required: true, maxlength: MAX_COURSE_TITLE, placeholder: "Orbits and Gravity" });
   const form = el(
     "form",
@@ -139,7 +139,12 @@ export async function renderAdmin(ctx) {
       el(
         "td",
         {},
-        el("span", { class: "title-cell" }, bullet(c.subject, i + 1, "sm"), el("a", { href: `#/admin/course/${c.id}`, text: c.title })),
+        el(
+          "span",
+          { class: "title-cell", "data-subject": c.subject },
+          el("span", { class: "dot", "aria-hidden": "true" }),
+          el("a", { href: `#/admin/course/${c.id}`, text: c.title }),
+        ),
       ),
       el("td", { class: "label", text: c.tier === "premium" ? state.me.premium_tier : "Free" }),
       el("td", {}, c.published ? el("span", { class: "label", text: "Live" }) : el("span", { class: "badge badge--draft", text: "Draft" })),
@@ -194,7 +199,7 @@ export async function renderAdmin(ctx) {
           "div",
           {},
           el("p", { class: "label", text: "Admin" }),
-          el("h1", { text: "Run the network" }),
+          el("h1", { text: "Manage courses" }),
           el("p", {
             text: "Everyone on this project's Yard team is an admin here, and nobody else is. To add an admin, invite them to the team from the Yard dashboard.",
           }),
@@ -259,7 +264,7 @@ export async function renderCourseEditor(ctx, id) {
       onclick: () =>
         guard(async () => {
           await api(`api/admin/courses/${id}`, { method: "PATCH", body: { published: !course.published } });
-          toast(course.published ? "Unpublished. Only the team can see it now." : "Published. It is on the map.");
+          toast(course.published ? "Unpublished. Only the team can see it now." : "Published. It's in the catalog.");
           state.dirty = false;
           renderCourseEditor(ctx, id);
         }),
@@ -396,7 +401,7 @@ export async function renderCourseEditor(ctx, id) {
               course.published ? null : el("span", { class: "badge badge--draft", text: "Draft" }),
               el("p", {
                 text: course.published
-                  ? "On the map. Everyone can see its route."
+                  ? "Published. Everyone can see it in the catalog."
                   : sections.length
                     ? "A draft. Only the team can see it."
                     : "A draft. Add a section before publishing.",
