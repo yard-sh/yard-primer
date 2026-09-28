@@ -9,7 +9,7 @@
 //   __yard/auth/logout?return=/      ends the Primer session, back here
 //
 // The app's service is access=public, so app/api/courses answers anonymous
-// visitors too; that is what fills the table below with real courses. Every
+// visitors too; that is what fills the lines below with real courses. Every
 // URL is relative so the page works at <team>.yard.sh/<slug>/, inside a
 // /@sandbox/, and on a custom domain.
 (function () {
@@ -146,62 +146,39 @@
 
   /* ---------------------------------------------------------- catalog */
 
-  var MAX_TILES = 8;
+  // Each course is a line: a numbered bullet in its subject's colour, then a
+  // strip map of its stops. Same shapes as the app (see app/ui.js).
+  var MAX_LINES = 6;
   var list = document.getElementById("courses");
 
-  function dot(status) {
-    var ns = "http://www.w3.org/2000/svg";
-    var svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("class", "dot");
-    svg.setAttribute("viewBox", "0 0 12 12");
-    svg.setAttribute("aria-hidden", "true");
-    var ring = document.createElementNS(ns, "circle");
-    ring.setAttribute("cx", "6");
-    ring.setAttribute("cy", "6");
-    ring.setAttribute("r", "4.8");
-    ring.setAttribute("fill", "none");
-    svg.appendChild(ring);
-    if (status !== "not_started") {
-      var fill = document.createElementNS(ns, status === "completed" ? "circle" : "path");
-      fill.setAttribute("class", "fill");
-      if (status === "completed") {
-        fill.setAttribute("cx", "6");
-        fill.setAttribute("cy", "6");
-        fill.setAttribute("r", "4.8");
-      } else {
-        fill.setAttribute("d", "M6 1.2a4.8 4.8 0 000 9.6z");
-      }
-      svg.appendChild(fill);
-    }
-    return svg;
+  function strip(course) {
+    var stops = course.stops || [];
+    var cls = "strip" + (course.access === "premium" ? " is-locked" : "") + (stops.length > 8 ? " is-dense" : "");
+    var ol = el("ol", { class: cls, style: "--n: " + Math.max(stops.length, 1), "aria-hidden": "true" });
+    stops.forEach(function (s) {
+      ol.appendChild(
+        el("li", { class: "stop" }, [
+          el("span", { class: "stop__dot", "data-status": s.status }),
+          el("span", { class: "stop__name", text: s.title }),
+        ]),
+      );
+    });
+    return ol;
   }
 
-  function tile(course, number, subject) {
-    var p = course.progress || { completed: 0, in_progress: 0 };
-    var dots = el("span", { class: "tile__dots", "aria-hidden": "true" });
-    for (var i = 0; i < course.sections; i++) {
-      dots.appendChild(dot(i < p.completed ? "completed" : i < p.completed + p.in_progress ? "in_progress" : "not_started"));
-    }
-    var top = el("span", { class: "tile__top" }, [
-      el("span", { text: String(number).padStart(2, "0") }),
-      course.tier === "premium" ? el("span", { class: "tile__stamp", text: "Premium" }) : null,
-    ]);
+  function lineRow(course, number, subject) {
+    var facts = [subject ? subject.name : course.subject, course.sections + (course.sections === 1 ? " stop" : " stops"), course.minutes + " min"];
     return el(
       "a",
-      {
-        class: "tile" + (course.access === "premium" ? " is-locked" : ""),
-        "data-subject": course.subject,
-        href: APP + "#/course/" + encodeURIComponent(course.id),
-      },
+      { class: "line-row", "data-subject": course.subject, href: APP + "#/course/" + encodeURIComponent(course.id) },
       [
-        top,
-        el("span", { class: "tile__sym", text: subject ? subject.symbol : course.subject.slice(0, 2), "aria-hidden": "true" }),
-        el("span", { class: "tile__name", text: course.title }),
-        el("span", {
-          class: "tile__meta",
-          text: course.sections + (course.sections === 1 ? " section" : " sections") + " · " + course.minutes + " min",
-        }),
-        dots,
+        el("span", { class: "line-row__head" }, [
+          el("span", { class: "bullet", text: String(number), "aria-hidden": "true" }),
+          el("span", { class: "line-row__title", text: course.title }),
+          course.tier === "premium" ? el("span", { class: "badge", text: "Premium" }) : null,
+          el("span", { class: "line-row__facts label", text: facts.join(" · ") }),
+        ]),
+        (course.stops || []).length ? strip(course) : null,
       ],
     );
   }
@@ -219,12 +196,12 @@
       if (!published.length) return;
       list.replaceChildren.apply(
         list,
-        published.slice(0, MAX_TILES).map(function (c, i) {
-          return el("li", {}, [tile(c, i + 1, subjects[c.subject])]);
+        published.slice(0, MAX_LINES).map(function (c, i) {
+          return el("li", {}, [lineRow(c, i + 1, subjects[c.subject])]);
         }),
       );
-      var all = document.getElementById("table-all");
-      if (all) all.textContent = "See all " + published.length + " courses →";
+      var all = document.getElementById("lines-all");
+      if (all && published.length > MAX_LINES) all.textContent = "See all " + published.length + " lines →";
       if (window.yard && window.yard.refresh) window.yard.refresh();
     });
   }

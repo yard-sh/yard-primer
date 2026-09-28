@@ -33,7 +33,7 @@
         "name": "Premium",
         "price_cents": 2000,
         "pricing_model": "subscription",
-        "description": "The whole table, every course",
+        "description": "Every line on the map, every course",
         "features": [
           "Every Premium course",
           "Everything in Free",

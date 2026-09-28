@@ -1,5 +1,6 @@
-// Shared pieces: app state, the API helper, DOM helpers, tiles and dots,
-// and the sheets (plan, sign in, confirm). Everything here builds DOM with
+// Shared pieces: app state, the API helper, DOM helpers, the map's parts
+// (line bullets, stops, strips and routes), and the sheets (plan, sign in,
+// confirm). Everything here builds DOM with
 // textContent; the only HTML string the app ever inserts is the Markdown
 // renderer's output, which escapes its input first.
 
@@ -66,15 +67,6 @@ export function el(tag, props, ...kids) {
   return node;
 }
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
-function svg(tag, attrs, ...kids) {
-  const node = document.createElementNS(SVG_NS, tag);
-  for (const [key, value] of Object.entries(attrs || {})) node.setAttribute(key, value);
-  node.append(...kids);
-  return node;
-}
-
 export function toast(message) {
   const node = $("toast");
   node.textContent = message;
@@ -122,84 +114,43 @@ export async function guard(fn) {
   }
 }
 
-/* -------------------------------------------------------- subjects, tiles */
+/* ------------------------------------------------------- lines and stops */
+//
+// The map's vocabulary. A course is a line, drawn in its subject's colour and
+// identified by a numbered bullet (its place in the catalog). Its sections
+// are stops. A stop is empty until opened, a bullseye while in progress and
+// filled once completed. A locked Premium line is drawn dashed, like a line
+// still under construction.
 
 export function subjectOf(key) {
   const subjects = (state.me && state.me.subjects) || [];
-  return subjects.find((s) => s.key === key) || { key, name: key, symbol: key.slice(0, 2) };
+  return subjects.find((s) => s.key === key) || { key, name: key };
 }
 
-const LOCK = () =>
-  svg(
-    "svg",
-    { viewBox: "0 0 12 12", "aria-hidden": "true" },
-    svg("rect", { x: "2", y: "5.5", width: "8", height: "5.5" }),
-    svg("path", { d: "M4 5.5V4a2 2 0 014 0v1.5" }),
-  );
+// Where a course sits in the catalog, which is its line number.
+export function numberOf(course) {
+  const index = (state.catalog || []).findIndex((c) => c.id === course.id);
+  return index >= 0 ? index + 1 : "";
+}
 
-export function stamps(course) {
+export function bullet(subjectKey, number, size = "") {
+  return el("span", {
+    class: "bullet" + (size ? " bullet--" + size : ""),
+    "data-subject": subjectKey,
+    text: String(number),
+    "aria-hidden": "true",
+  });
+}
+
+export function badges(course) {
   return [
-    !course.published ? el("span", { class: "stamp stamp--draft", text: "Draft" }) : null,
-    course.tier === "premium"
-      ? el("span", { class: "stamp" }, course.access === "premium" ? LOCK() : null, "Premium")
-      : null,
+    !course.published ? el("span", { class: "badge badge--draft", text: "Draft" }) : null,
+    course.tier === "premium" ? el("span", { class: "badge badge--premium", text: "Premium" }) : null,
   ].filter(Boolean);
 }
 
-// One course as an element tile: number, stamps, symbol, name, facts, dots.
-export function tile(course, number, { href, large = false } = {}) {
-  const subject = subjectOf(course.subject);
-  const locked = course.access === "premium";
-  const cls = "tile" + (large ? " tile--lg" : "") + (locked ? " is-locked" : "");
-  const facts = `${plural(course.sections, "section")} · ${course.minutes} min`;
-
-  const top = el(
-    "span",
-    { class: "tile__top" },
-    el("span", { text: pad(number), "aria-hidden": "true" }),
-    el("span", { class: "tile__stamps" }, stamps(course)),
-  );
-
-  if (large) {
-    return el(
-      "div",
-      { class: cls, "data-subject": course.subject },
-      top,
-      el("span", { class: "tile__sym", text: subject.symbol, "aria-hidden": "true" }),
-      el("span", { class: "tile__name", text: subject.name }),
-    );
-  }
-
-  return el(
-    href ? "a" : "div",
-    { class: cls, "data-subject": course.subject, href },
-    top,
-    el("span", { class: "tile__sym", text: subject.symbol, "aria-hidden": "true" }),
-    el("span", { class: "tile__name", text: course.title }),
-    el("span", { class: "tile__meta", text: facts }),
-    el("span", { class: "tile__dots" }, dotsFromProgress(course)),
-  );
-}
-
-// A small square in a subject's colour with its symbol.
-export function sym(subjectKey) {
-  const subject = subjectOf(subjectKey);
-  return el("span", { class: "sym", "data-subject": subjectKey, text: subject.symbol, "aria-hidden": "true" });
-}
-
-/* ------------------------------------------------------------------ dots */
-
-// Not started is an empty ring, in progress is half filled, completed is
-// solid. Drawn as SVG because a font may not have the half-circle glyph.
-export function dot(status) {
-  const kids = [svg("circle", { cx: "6", cy: "6", r: "4.8", fill: "none" })];
-  if (status === "completed") kids.push(svg("circle", { class: "fill", cx: "6", cy: "6", r: "4.8" }));
-  if (status === "in_progress") kids.push(svg("path", { class: "fill", d: "M6 1.2a4.8 4.8 0 000 9.6z" }));
-  return svg("svg", { class: "dot", viewBox: "0 0 12 12", "aria-hidden": "true", "data-status": status }, ...kids);
-}
-
-export function dots(statuses, label) {
-  return el("span", { class: "dots", role: "img", "aria-label": label }, statuses.map(dot));
+export function stopDot(status) {
+  return el("span", { class: "stop__dot", "data-status": status, "aria-hidden": "true" });
 }
 
 export const STATUS_LABEL = {
@@ -208,20 +159,97 @@ export const STATUS_LABEL = {
   completed: "Done",
 };
 
-// The catalog knows counts, not which section is which, so its dots are a
-// summary: finished first, then started, then the rest.
-export function dotsFromProgress(course) {
-  const p = course.progress || { completed: 0, in_progress: 0 };
-  const statuses = [];
-  for (let i = 0; i < course.sections; i++) {
-    if (i < p.completed) statuses.push("completed");
-    else if (i < p.completed + p.in_progress) statuses.push("in_progress");
-    else statuses.push("not_started");
-  }
+// A horizontal strip map: the line, its stops, and (room allowing) their
+// names. Used by the catalog, where the whole row is one link.
+export function strip(course) {
+  const stops = course.stops || [];
+  const done = stops.filter((s) => s.status === "completed").length;
   const label = course.progress
-    ? `${p.completed} of ${course.sections} sections done`
-    : plural(course.sections, "section");
-  return dots(statuses, label);
+    ? `${done} of ${stops.length} stops completed`
+    : `${plural(stops.length, "stop")}`;
+  return el(
+    "ol",
+    {
+      class: "strip" + (course.access === "premium" ? " is-locked" : "") + (stops.length > 8 ? " is-dense" : ""),
+      style: `--n: ${Math.max(stops.length, 1)}`,
+      "data-subject": course.subject,
+      "aria-label": label,
+    },
+    stops.map((s) =>
+      el("li", { class: "stop" }, stopDot(s.status), el("span", { class: "stop__name", text: s.title })),
+    ),
+  );
+}
+
+// One course in the catalog: bullet, name, facts, and its strip map.
+export function lineRow(course, number) {
+  const subject = subjectOf(course.subject);
+  const stops = course.stops || [];
+  const done = stops.filter((s) => s.status === "completed").length;
+  const facts = [subject.name, plural(course.sections, "stop"), `${course.minutes} min`];
+  return el(
+    "a",
+    { class: "line-row", href: `#/course/${course.id}`, "data-subject": course.subject },
+    el(
+      "span",
+      { class: "line-row__head" },
+      bullet(course.subject, number),
+      el("span", { class: "line-row__title", text: course.title }),
+      el("span", { class: "line-row__badges" }, badges(course)),
+      el(
+        "span",
+        { class: "line-row__facts label" },
+        facts.join(" · "),
+        course.progress && course.sections ? el("b", { text: ` · ${done}/${course.sections}` }) : null,
+      ),
+    ),
+    stops.length ? strip(course) : el("span", { class: "muted", text: "No stops yet." }),
+  );
+}
+
+/* ---------------------------------------------------------------- routes */
+
+// A vertical route: the line runs down the left and every stop is a row, as
+// on the diagram above a train door. Used for a course's syllabus and the
+// reader's sidebar. `current` gets a "You are here" marker.
+export function route(course, sections, { current, compact = false, locked = false } = {}) {
+  return el(
+    "ol",
+    {
+      class: "route" + (compact ? " route--compact" : "") + (locked ? " is-locked" : ""),
+      "data-subject": course.subject,
+      "aria-label": "Stops",
+    },
+    sections.map((s, i) =>
+      el(
+        "li",
+        { class: "route__stop", "data-section": s.id },
+        el(
+          "a",
+          {
+            class: "route__link",
+            href: `#/course/${course.id}/${s.id}`,
+            "aria-current": compact && s.id === current ? "page" : null,
+          },
+          stopDot(s.status),
+          el(
+            "span",
+            { class: "route__name" },
+            el("span", { text: s.title }),
+            !compact && s.id === current ? el("span", { class: "here", text: "You are here" }) : null,
+          ),
+          compact
+            ? null
+            : el(
+                "span",
+                { class: "route__meta label" },
+                el("span", { text: `${pad(i + 1)} · ${s.minutes} min` }),
+                el("span", { class: "route__status", text: locked ? "Locked" : STATUS_LABEL[s.status] }),
+              ),
+        ),
+      ),
+    ),
+  );
 }
 
 /* ---------------------------------------------------------------- sign in */
@@ -278,13 +306,13 @@ export function showSignIn(message) {
 export function showPlan() {
   const me = state.me || {};
   const premium = (state.catalog || []).filter((c) => c.tier === "premium" && c.published);
-  const tiles = premium.slice(0, 6).map((c) => sym(c.subject));
+  const tiles = premium.slice(0, 6).map((c) => bullet(c.subject, numberOf(c)));
   const count = premium.length
-    ? `all ${plural(premium.length, "Premium course")} on the table`
-    : "every Premium course";
+    ? `all ${plural(premium.length, "Premium line")} on the map`
+    : "every Premium line";
   openSheet(
     el("p", { class: "label", text: me.premium_tier || "Premium" }),
-    el("h2", { text: "This one is on the Premium shelf." }),
+    el("h2", { text: "This line needs a Premium pass." }),
     tiles.length ? el("div", { class: "sheet__tiles" }, tiles) : null,
     el("p", { text: `${me.premium_tier || "Premium"} opens ${count}, plus each new one the day it is published.` }),
     el(
@@ -328,7 +356,7 @@ export function confirmSheet({ label, title, body, confirm, danger = false }) {
 
 /* ------------------------------------------------------------- fallbacks */
 
-export function notFound(what = "That isn't on the table.") {
+export function notFound(what = "That stop isn't on the map.") {
   return el(
     "div",
     { class: "wrap" },
@@ -337,8 +365,8 @@ export function notFound(what = "That isn't on the table.") {
       { class: "empty", style: "margin-top:48px" },
       el("p", { class: "label", text: "404" }),
       el("h2", { text: what }),
-      el("p", { text: "It may have been moved, unpublished, or never existed." }),
-      el("a", { class: "btn btn--primary", href: "#/", text: "Back to the courses" }),
+      el("p", { text: "It may have been moved, closed, or never existed." }),
+      el("a", { class: "btn btn--primary", href: "#/", text: "Back to the map" }),
     ),
   );
 }

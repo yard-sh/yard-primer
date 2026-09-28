@@ -1,20 +1,21 @@
-// The learner's side: the table of courses, a course's syllabus, and the
-// reader. The server decides what anyone may see; these views only draw
-// what came back, and explain a refusal when one does.
+// The learner's side: the map of courses, a course's route, and the reader.
+// The server decides what anyone may see; these views only draw what came
+// back, and explain a refusal when one does.
 
 import {
   state,
   api,
   el,
   guard,
-  pad,
   plural,
-  tile,
-  sym,
-  dot,
+  bullet,
+  badges,
+  lineRow,
+  route,
+  stopDot,
+  numberOf,
   subjectOf,
   signInLink,
-  STATUS_LABEL,
   ApiError,
 } from "./ui.js";
 import { renderMarkdown, typeset } from "./markdown.js";
@@ -23,13 +24,31 @@ let filter = "all";
 
 /* --------------------------------------------------------------- catalog */
 
+// The map's key, the way a printed transit map explains its symbols.
+function key() {
+  const row = (mark, text) => el("li", {}, mark, el("span", { text }));
+  const sample = (status) => el("span", { class: "key__stop" }, stopDot(status));
+  return el(
+    "figure",
+    { class: "key" },
+    el("figcaption", { class: "label", text: "Key" }),
+    el(
+      "ul",
+      {},
+      row(sample("not_started"), "Stop not started"),
+      row(sample("in_progress"), "In progress"),
+      row(sample("completed"), "Completed"),
+      row(el("span", { class: "key__dash", "aria-hidden": "true" }), "Premium line"),
+    ),
+  );
+}
+
 export async function renderCatalog(ctx) {
   const data = await api("api/courses");
   if (ctx.stale()) return;
   state.catalog = data.courses;
   const me = state.me;
   const courses = data.courses;
-  const numbers = new Map(courses.map((c, i) => [c.id, i + 1]));
 
   ctx.title("");
 
@@ -39,12 +58,12 @@ export async function renderCatalog(ctx) {
     el(
       "div",
       {},
-      el("p", { class: "label", text: `The table · ${plural(courses.length, "course")}` }),
-      el("h1", {}, "Learn how things ", el("em", { text: "work" }), "."),
+      el("p", { class: "label", text: `The network · ${plural(courses.length, "line")}` }),
+      el("h1", { text: "Where to next?" }),
       el("p", {
         text: me.authenticated
-          ? "Short courses in the sciences, a few sections each. Your place is saved as you go."
-          : "Short courses in the sciences, a few sections each. Browse freely, then sign in to start one and your place is saved as you go.",
+          ? "Every course is a line and every section a stop. Ride one end to end, a stop at a sitting. Your place is saved as you go."
+          : "Every course is a line and every section a stop. Look around freely, then sign in to start one and your place is saved as you go.",
       }),
     ),
     key(),
@@ -59,9 +78,9 @@ export async function renderCatalog(ctx) {
         el(
           "div",
           { class: "empty" },
-          el("h2", { text: "The table is empty." }),
+          el("h2", { text: "No lines yet." }),
           el("p", {
-            text: me.is_admin ? "Create the first course from the admin panel." : "Courses are on their way. Check back soon.",
+            text: me.is_admin ? "Open the first line from the admin panel." : "Courses are on their way. Check back soon.",
           }),
           me.is_admin ? el("a", { class: "btn btn--primary", href: "#/admin", text: "Open admin" }) : null,
         ),
@@ -80,28 +99,32 @@ export async function renderCatalog(ctx) {
     ? el(
         "section",
         { class: "resume", "aria-labelledby": "resume-title" },
-        el("h2", { id: "resume-title", text: "Pick up where you left off" }),
+        el("h2", { id: "resume-title", class: "section-title", text: "Continue your journey" }),
         el(
           "ul",
           { class: "resume__list" },
-          going.map((c) =>
-            el(
+          going.map((c) => {
+            const next = (c.stops || []).find((s) => s.status !== "completed");
+            return el(
               "li",
               {},
               el(
                 "a",
-                { class: "resume__card", href: `#/course/${c.id}` },
-                sym(c.subject),
+                { class: "resume__card", href: next ? `#/course/${c.id}/${next.id}` : `#/course/${c.id}` },
+                bullet(c.subject, numberOf(c)),
                 el(
                   "span",
                   { class: "resume__text" },
                   el("strong", { text: c.title }),
-                  el("span", { class: "label", text: `${c.progress.completed} of ${c.sections} done` }),
+                  el("span", {
+                    class: "muted",
+                    text: next ? `Next stop: ${next.title}` : `${c.progress.completed} of ${c.sections} done`,
+                  }),
                 ),
-                el("span", { class: "resume__go", text: "Continue →" }),
+                el("span", { class: "resume__go", "aria-hidden": "true", text: "→" }),
               ),
-            ),
-          ),
+            );
+          }),
         ),
       )
     : null;
@@ -110,37 +133,35 @@ export async function renderCatalog(ctx) {
   const subjects = data.subjects.filter((s) => present.has(s.key));
   if (filter !== "all" && !present.has(filter)) filter = "all";
 
-  const table = el(
+  const lines = el(
     "ol",
-    { class: "table", "aria-label": "Courses" },
-    courses.map((c) =>
-      el("li", { "data-subject-key": c.subject }, tile(c, numbers.get(c.id), { href: `#/course/${c.id}` })),
-    ),
+    { class: "lines", "aria-label": "Courses" },
+    courses.map((c, i) => el("li", { "data-subject-key": c.subject }, lineRow(c, i + 1))),
   );
 
-  const legend = el(
+  const filters = el(
     "div",
-    { class: "legend", role: "group", "aria-label": "Filter by subject" },
-    el("button", { class: "chip chip--all", type: "button", "data-filter": "all", text: "All" }),
+    { class: "filters", role: "group", "aria-label": "Filter by subject" },
+    el("button", { class: "chip", type: "button", "data-filter": "all", text: "All lines" }),
     subjects.map((s) =>
       el(
         "button",
         { class: "chip", type: "button", "data-filter": s.key },
-        el("span", { class: "sym", "data-subject": s.key, text: s.symbol, "aria-hidden": "true" }),
+        el("span", { class: "chip__swatch", "data-subject": s.key, "aria-hidden": "true" }),
         s.name,
       ),
     ),
   );
 
   const apply = () => {
-    legend.querySelectorAll("[data-filter]").forEach((chip) => {
+    filters.querySelectorAll("[data-filter]").forEach((chip) => {
       chip.setAttribute("aria-pressed", String(chip.dataset.filter === filter));
     });
-    table.querySelectorAll("li").forEach((li) => {
+    lines.querySelectorAll(":scope > li").forEach((li) => {
       li.hidden = filter !== "all" && li.dataset.subjectKey !== filter;
     });
   };
-  legend.addEventListener("click", (event) => {
+  filters.addEventListener("click", (event) => {
     const chip = event.target.closest("[data-filter]");
     if (!chip) return;
     filter = chip.dataset.filter === filter ? "all" : chip.dataset.filter;
@@ -148,52 +169,33 @@ export async function renderCatalog(ctx) {
   });
   apply();
 
-  ctx.show(el("div", { class: "wrap" }, intro, resume, subjects.length > 1 ? legend : null, table));
-}
-
-// How to read a tile, the way a printed periodic table explains its cells.
-function key() {
-  const sample = el(
-    "div",
-    { class: "tile", "data-subject": "physics", "aria-hidden": "true" },
-    el("span", { class: "tile__top" }, el("span", { text: "01" })),
-    el("span", { class: "tile__sym", text: "Ph" }),
-    el("span", { class: "tile__name", text: "Course" }),
-    el("span", { class: "tile__dots" }, el("span", { class: "dots" }, ["completed", "in_progress", "not_started"].map(dot))),
-  );
-  const row = (mark, text) => el("li", {}, mark, el("span", { text }));
-  return el(
-    "figure",
-    { class: "key" },
-    el("figcaption", { class: "label", text: "Key" }),
-    sample,
+  ctx.show(
     el(
-      "ul",
-      {},
-      row(el("b", { text: "01" }), "Place on the table"),
-      row(el("b", { text: "Ph" }), "Subject"),
-      row(dot("not_started"), "Section not started"),
-      row(dot("in_progress"), "In progress"),
-      row(dot("completed"), "Done"),
+      "div",
+      { class: "wrap" },
+      intro,
+      resume,
+      el(
+        "div",
+        { class: "lines-head" },
+        el("h2", { class: "section-title", text: "All lines" }),
+        subjects.length > 1 ? filters : null,
+      ),
+      lines,
     ),
   );
 }
 
 /* ---------------------------------------------------------------- course */
 
-// Where the main button goes: the first section not yet finished, or the
-// first section when everything is done (a review).
+// Where the main button goes: the first stop not yet completed, or the first
+// stop when everything is done (a review).
 function nextSection(sections) {
   return sections.find((s) => s.status !== "completed") || sections[0];
 }
 
-function numberOf(course) {
-  const index = (state.catalog || []).findIndex((c) => c.id === course.id);
-  return index >= 0 ? index + 1 : 0;
-}
-
 export async function renderCourse(ctx, id) {
-  // The catalog gives the tile its number; fetch it too on a direct visit.
+  // The catalog gives the line its number; fetch it too on a direct visit.
   const [{ course, sections }, catalog] = await Promise.all([
     api(`api/courses/${id}`),
     state.catalog ? null : api("api/courses"),
@@ -202,32 +204,28 @@ export async function renderCourse(ctx, id) {
   if (catalog) state.catalog = catalog.courses;
   const me = state.me;
   const subject = subjectOf(course.subject);
+  const number = numberOf(course);
   ctx.title(course.title);
 
   const done = sections.filter((s) => s.status === "completed").length;
   const started = sections.some((s) => s.status !== "not_started");
-  const target = nextSection(sections);
+  const target = sections.length ? nextSection(sections) : null;
   const tierName = course.tier === "premium" ? me.premium_tier : "Free";
 
-  let actions;
+  let actions = null;
   if (!sections.length) {
-    actions = el("p", { class: "muted", text: "No sections yet." });
+    actions = el("p", { class: "muted", text: "No stops yet." });
   } else if (course.access === "open") {
-    const verb = done === sections.length ? "Review" : started ? "Continue" : "Start";
-    actions = el(
-      "a",
-      { class: "btn btn--primary", href: `#/course/${course.id}/${target.id}` },
-      verb === "Continue" ? `Continue: ${target.title}` : verb === "Review" ? "Review from the start" : "Start the course",
-    );
+    const label =
+      done === sections.length ? "Ride it again from the start" : started ? `Continue: ${target.title}` : "Start the course";
+    actions = el("a", { class: "btn btn--primary btn--lg", href: `#/course/${course.id}/${target.id}`, text: label });
   } else if (course.access === "sign_in") {
     actions = el(
       "div",
       { class: "actions" },
-      signInLink("Sign in to start"),
+      signInLink("Sign in to start", "btn btn--primary btn--lg"),
       el("span", { class: "muted", text: "Free with a Yard account. Your progress is saved." }),
     );
-  } else {
-    actions = null;
   }
 
   const locked =
@@ -235,49 +233,52 @@ export async function renderCourse(ctx, id) {
       ? el(
           "div",
           { class: "notice notice--premium" },
-          el("p", {}, el("strong", { text: `This course is part of ${me.premium_tier}. ` }), "The syllabus is open to everyone; the lessons unlock with the plan."),
+          el(
+            "p",
+            {},
+            el("strong", { text: `This is a ${me.premium_tier} line. ` }),
+            "Anyone can see its route; the stops open with the plan.",
+          ),
           el(
             "div",
             { class: "actions" },
-            el("a", { class: "btn btn--primary", href: "../#pricing", text: `Unlock with ${me.premium_tier}` }),
+            el("a", { class: "btn btn--primary", href: "../#pricing", text: `Get ${me.premium_tier}` }),
             me.authenticated ? null : signInLink("I already have it", "btn"),
           ),
         )
       : null;
 
   const draft = !course.published
-    ? el("div", { class: "notice" }, el("p", { text: "Draft: only your team can see this course until it is published." }), el("a", { class: "btn btn--sm", href: `#/admin/course/${course.id}`, text: "Edit course" }))
+    ? el(
+        "div",
+        { class: "notice" },
+        el("p", { text: "Draft: only your team can see this line until it is published." }),
+        el("a", { class: "btn btn--sm", href: `#/admin/course/${course.id}`, text: "Edit course" }),
+      )
     : null;
 
-  const meter =
+  const progress =
     me.authenticated && sections.length && course.access === "open"
-      ? [
-          el(
-            "div",
-            { class: "meter", role: "img", "aria-label": `${done} of ${sections.length} sections done` },
-            sections.map((s) => el("i", { "data-status": s.status })),
-          ),
-          el("p", { class: "label meter__label", text: `${done} of ${sections.length} done` }),
-        ]
+      ? el("p", { class: "course-head__progress" }, el("b", { text: `${done} of ${sections.length}` }), " stops completed")
       : null;
 
   const head = el(
     "header",
     { class: "course-head" },
-    tile(course, numberOf(course), { large: true }),
+    bullet(course.subject, number, "xl"),
     el(
       "div",
       {},
-      el("p", { class: "label", text: `${subject.name} · ${tierName}` }),
-      el("h1", { text: course.title }),
-      course.summary ? el("p", { class: "course-head__summary", text: course.summary }) : null,
       el(
         "p",
-        { class: "course-head__facts label" },
-        el("span", { text: plural(sections.length, "section") }),
-        el("span", { text: `About ${course.minutes} min` }),
+        { class: "label course-head__line" },
+        el("span", { text: `Line ${number} · ${subject.name} · ${tierName}` }),
+        badges({ ...course, tier: "free" }),
       ),
-      meter,
+      el("h1", { text: course.title }),
+      course.summary ? el("p", { class: "course-head__summary", text: course.summary }) : null,
+      el("p", { class: "label", text: `${plural(sections.length, "stop")} · about ${course.minutes} min` }),
+      progress,
       el(
         "div",
         { class: "actions" },
@@ -287,41 +288,30 @@ export async function renderCourse(ctx, id) {
     ),
   );
 
-  const syllabus = sections.length
-    ? el(
-        "ol",
-        { class: "syllabus", "aria-label": "Sections" },
-        sections.map((s, i) =>
-          el(
-            "li",
-            {},
-            el(
-              "a",
-              { class: "syllabus__row", href: `#/course/${course.id}/${s.id}` },
-              dot(s.status),
-              el("span", { class: "no", text: pad(i + 1) }),
-              el("span", { class: "title", text: s.title }),
-              el("span", { class: "mins label", text: `${s.minutes} min` }),
-              el("span", {
-                class: "status label",
-                text: course.access === "premium" ? "Locked" : me.authenticated ? STATUS_LABEL[s.status] : "",
-              }),
-            ),
-          ),
-        ),
-      )
-    : null;
+  const current = me.authenticated && course.access === "open" && started && target ? target.id : null;
 
   ctx.show(
     el(
       "div",
       { class: "wrap" },
-      el("nav", { class: "crumbs", "aria-label": "Breadcrumb" }, el("a", { href: "#/", text: "Courses" }), el("span", { text: "/" }), el("span", { text: subject.name })),
+      el(
+        "nav",
+        { class: "crumbs", "aria-label": "Breadcrumb" },
+        el("a", { href: "#/", text: "All lines" }),
+        el("span", { text: "/" }),
+        el("span", { text: subject.name }),
+      ),
       head,
       draft,
       locked,
-      el("h2", { class: "section-title", text: "Syllabus" }),
-      syllabus,
+      sections.length
+        ? el(
+            "section",
+            { class: "route-panel", "aria-labelledby": "route-title" },
+            el("h2", { id: "route-title", class: "section-title", text: "Route" }),
+            route(course, sections, { current, locked: course.access === "premium" }),
+          )
+        : null,
     ),
   );
 }
@@ -329,16 +319,19 @@ export async function renderCourse(ctx, id) {
 /* ---------------------------------------------------------------- reader */
 
 export async function renderReader(ctx, id, sid) {
-  const [detail, result] = await Promise.all([
+  const [detail, result, catalog] = await Promise.all([
     api(`api/courses/${id}`),
     api(`api/courses/${id}/sections/${sid}`).catch((err) => err),
+    state.catalog ? null : api("api/courses").catch(() => null),
   ]);
   if (ctx.stale()) return;
+  if (catalog) state.catalog = catalog.courses;
   if (result instanceof ApiError && result.status === 404) throw result;
   if (result instanceof Error && !(result instanceof ApiError)) throw result;
 
   const me = state.me;
   const { course, sections } = detail;
+  const number = numberOf(course);
   const index = sections.findIndex((s) => s.id === sid);
   const prev = sections[index - 1];
   const next = sections[index + 1];
@@ -350,44 +343,42 @@ export async function renderReader(ctx, id, sid) {
     el(
       "details",
       { open: window.innerWidth > 900 },
-      el("summary", {}, sym(course.subject), el("span", { text: course.title })),
-      el(
-        "ol",
-        {},
-        sections.map((s) =>
-          el(
-            "li",
-            {},
-            el(
-              "a",
-              { href: `#/course/${course.id}/${s.id}`, "aria-current": s.id === sid ? "page" : null, "data-section": s.id },
-              dot(s.status),
-              el("span", { text: s.title }),
-            ),
-          ),
-        ),
-      ),
+      el("summary", {}, bullet(course.subject, number, "sm"), el("span", { class: "rail__title", text: course.title })),
+      route(course, sections, { current: sid, compact: true, locked: course.access === "premium" }),
     ),
   );
 
   const crumbs = el(
     "nav",
     { class: "crumbs", "aria-label": "Breadcrumb" },
-    el("a", { href: "#/", text: "Courses" }),
+    el("a", { href: "#/", text: "All lines" }),
     el("span", { text: "/" }),
     el("a", { href: `#/course/${course.id}`, text: course.title }),
     el("span", { text: "/" }),
-    el("span", { text: `Section ${index + 1}` }),
+    el("span", { text: `Stop ${index + 1}` }),
   );
 
   const pageNav = el(
     "nav",
-    { class: "page__nav", "aria-label": "Sections" },
-    prev ? el("a", { class: "linkish", href: `#/course/${course.id}/${prev.id}`, text: "← Previous" }) : null,
+    { class: "page__nav", "aria-label": "Stops" },
+    prev ? el("a", { class: "page__prev", href: `#/course/${course.id}/${prev.id}`, text: "← Previous stop" }) : null,
     next
-      ? el("a", { class: "linkish", href: `#/course/${course.id}/${next.id}`, text: "Next →" })
-      : el("a", { class: "linkish", href: `#/course/${course.id}`, text: "Syllabus" }),
+      ? el(
+          "a",
+          { class: "page__next", href: `#/course/${course.id}/${next.id}` },
+          el("span", { class: "label", text: "Next stop" }),
+          el("span", { text: `${next.title} →` }),
+        )
+      : el(
+          "a",
+          { class: "page__next", href: `#/course/${course.id}` },
+          el("span", { class: "label", text: "End of the line" }),
+          el("span", { text: "Back to the route →" }),
+        ),
   );
+
+  const header = (minutes) =>
+    el("p", { class: "label" }, `Line ${number} · Stop ${index + 1} of ${sections.length}`, minutes ? ` · ${minutes} min` : "");
 
   // Refused: say why, where the lesson would be.
   if (result instanceof ApiError) {
@@ -395,19 +386,19 @@ export async function renderReader(ctx, id, sid) {
     const premium = result.code === "premium_required";
     const panel = el(
       "article",
-      { class: "page" },
-      el("p", { class: "label", text: `Section ${index + 1} of ${sections.length}` }),
-      el("h1", { text: current ? current.title : "Locked section" }),
+      { class: "page", "data-subject": course.subject },
+      header(),
+      el("h1", { text: current ? current.title : "Locked stop" }),
       el(
         "div",
         { class: premium ? "notice notice--premium" : "notice" },
         el("p", {
           text: premium
-            ? `This section is part of ${me.premium_tier}. The plan opens every Premium course on the table.`
-            : "Sign in with your Yard account to read this section. Your progress is saved as you go.",
+            ? `This stop is on a ${me.premium_tier} line. The plan opens every Premium line on the map.`
+            : "Sign in with your Yard account to read this stop. Your progress is saved as you go.",
         }),
         premium
-          ? el("a", { class: "btn btn--primary", href: "../#pricing", text: `Unlock with ${me.premium_tier}` })
+          ? el("a", { class: "btn btn--primary", href: "../#pricing", text: `Get ${me.premium_tier}` })
           : signInLink("Sign in to read"),
       ),
       el("footer", { class: "page__foot" }, el("span"), pageNav),
@@ -434,15 +425,15 @@ export async function renderReader(ctx, id, sid) {
   const paint = (courseProgress) => {
     check.setAttribute("aria-pressed", String(status === "completed"));
     check.querySelector(".check__text").textContent = status === "completed" ? "Completed" : "Mark complete";
-    const link = rail.querySelector(`[data-section="${section.id}"] .dot`);
-    if (link) link.replaceWith(dot(status));
+    const dot = rail.querySelector(`[data-section="${section.id}"] .stop__dot`);
+    if (dot) dot.dataset.status = status;
     if (courseProgress && courseProgress.total && courseProgress.completed === courseProgress.total) {
       doneSlot.replaceChildren(
         el(
           "div",
           { class: "notice notice--done" },
-          el("p", {}, el("strong", { text: "Course complete. " }), `Every section of ${course.title} is done.`),
-          el("a", { class: "btn", href: "#/", text: "Back to the table" }),
+          el("p", {}, el("strong", { text: "End of the line. " }), `Every stop on ${course.title} is completed.`),
+          el("a", { class: "btn", href: "#/", text: "Pick another line" }),
         ),
       );
     } else {
@@ -460,7 +451,7 @@ export async function renderReader(ctx, id, sid) {
         });
         status = res.status;
         paint(res.course);
-        if (status === "completed" && next) pageNav.querySelector('a[href$="' + next.id + '"]').focus();
+        if (status === "completed" && next) pageNav.querySelector(".page__next").focus();
       } finally {
         check.disabled = false;
       }
@@ -469,8 +460,8 @@ export async function renderReader(ctx, id, sid) {
 
   const page = el(
     "article",
-    { class: "page" },
-    el("p", { class: "label", text: `Section ${index + 1} of ${sections.length} · ${section.minutes} min` }),
+    { class: "page", "data-subject": course.subject },
+    header(section.minutes),
     el("h1", { text: section.title }),
     prose,
     doneSlot,
@@ -481,7 +472,7 @@ export async function renderReader(ctx, id, sid) {
   if (!ctx.show(el("div", { class: "wrap" }, crumbs, el("div", { class: "reader" }, rail, page)))) return;
   typeset(prose);
 
-  // Opening a section starts it (and never un-finishes it).
+  // Opening a stop starts it (and never un-completes it).
   guard(async () => {
     const res = await api(`api/courses/${course.id}/sections/${section.id}/open`, { method: "POST" });
     if (ctx.stale()) return;

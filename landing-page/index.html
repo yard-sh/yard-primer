@@ -7,7 +7,7 @@
     <title>Primer · Short courses in the sciences</title>
     <meta
       name="description"
-      content="Short STEM courses, a few sections each. Browse the table, sign in to start, and your progress is saved section by section."
+      content="Short STEM courses, a few sections each. Every subject is a line and every section a stop: browse the map, sign in to start, and your progress is saved stop by stop."
     />
     <!-- Relative URLs only: this page serves at <team>.yard.sh/<slug>/, inside
          /@sandbox/ paths, and on custom domains. -->
@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     />
     <link rel="stylesheet" href="styles.css" />
     <script>
@@ -38,12 +38,16 @@
     <header class="bar">
       <div class="wrap bar__inner">
         <a class="brand" href="./" aria-label="Primer home">
-          <span class="brand__tile" aria-hidden="true"><small>59</small>Pr</span>
+          <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+            <path class="brand__blue" d="M16 3v26" />
+            <path class="brand__red" d="M3 22h6l7-7h13" />
+            <circle class="brand__ring" cx="16" cy="15" r="5.5" />
+          </svg>
           <span class="brand__name">Primer</span>
         </a>
         <nav class="bar__nav" aria-label="Sections">
-          <a href="#table">Courses</a>
-          <a href="#progress">How it works</a>
+          <a href="#lines">Lines</a>
+          <a href="#how">How it works</a>
           <a href="#pricing">Pricing</a>
         </nav>
         <div class="bar__end">
@@ -67,103 +71,131 @@
       <!-- ================================================================ hero -->
       <section class="hero wrap">
         <div class="hero__text">
-          <p class="label">Element 59 · Pr · Primer</p>
-          <h1>
-            A periodic table of
-            <span class="hl">things worth knowing</span>.
-          </h1>
+          <p class="label">Primer · short courses in the sciences</p>
+          <h1>Every subject is a line. Every section is a stop.</h1>
           <p class="hero__lede" data-yard="tagline">
-            Short courses in physics, maths, chemistry, biology and computing. Each one is a
-            handful of sections you can finish in a sitting, with the formulas typeset properly
-            and your place saved as you go.
+            Physics, maths, chemistry, biology and computing, as a network of short courses. Ride a
+            line one stop at a sitting, with the formulas typeset properly and your place saved
+            wherever you get off.
           </p>
           <div class="actions">
-            <a class="btn btn--primary btn--lg" href="app/">Browse the courses</a>
-            <a class="btn btn--lg" href="#pricing">See Premium</a>
+            <a class="btn btn--primary btn--lg" href="app/">See the map</a>
+            <a class="btn btn--lg" href="#pricing">Get Premium</a>
           </div>
-          <p class="hero__note label">Free to start · No card needed</p>
+          <p class="hero__note label">Free to ride · No card needed</p>
         </div>
 
-        <!-- The top-left corner of a periodic table, drawn with course
-             subjects. Empty cells are part of the shape, like the gap
-             between hydrogen and helium. -->
-        <div class="stairs" aria-hidden="true">
-          <span class="cell" data-subject="physics"><i>01</i>Ph</span>
-          <span class="cell cell--gap"></span>
-          <span class="cell cell--gap"></span>
-          <span class="cell cell--gap"></span>
-          <span class="cell cell--gap"></span>
-          <span class="cell" data-subject="astronomy"><i>02</i>As</span>
-
-          <span class="cell" data-subject="math"><i>03</i>Ma</span>
-          <span class="cell" data-subject="chemistry"><i>04</i>Ch</span>
-          <span class="cell cell--gap"></span>
-          <span class="cell" data-subject="engineering"><i>05</i>En</span>
-          <span class="cell" data-subject="biology"><i>06</i>Bi</span>
-          <span class="cell" data-subject="cs"><i>07</i>Cs</span>
-
-          <span class="cell" data-subject="biology"><i>08</i>Bi</span>
-          <span class="cell" data-subject="cs"><i>09</i>Cs</span>
-          <span class="cell" data-subject="physics"><i>10</i>Ph</span>
-          <span class="cell" data-subject="math"><i>11</i>Ma</span>
-          <span class="cell cell--you"><i>??</i>You</span>
-          <span class="cell" data-subject="chemistry"><i>12</i>Ch</span>
-        </div>
+        <!-- A network drawn the way transit maps are: 45 degree bends, white
+             interchanges where lines cross, and the rider's current stop. -->
+        <svg class="net" viewBox="0 0 560 440" role="img" aria-label="A transit map of five subject lines">
+          <g class="net__lines">
+            <path data-subject="physics" d="M30 150H200L280 230H530" />
+            <path data-subject="math" d="M150 40V180L230 260V410" />
+            <path data-subject="chemistry" d="M30 330H320L400 250V40" />
+            <path data-subject="biology" d="M300 410L370 340H530" />
+            <path data-subject="cs" d="M270 40V90L340 160H530" />
+          </g>
+          <g class="net__stops">
+            <circle data-subject="physics" cx="70" cy="150" r="7" />
+            <circle data-subject="physics" cx="330" cy="230" r="7" />
+            <circle data-subject="physics" cx="470" cy="230" r="7" />
+            <circle data-subject="physics" cx="530" cy="230" r="7" />
+            <circle data-subject="math" cx="150" cy="80" r="7" />
+            <circle data-subject="math" cx="190" cy="220" r="7" />
+            <circle data-subject="math" cx="230" cy="390" r="7" />
+            <circle data-subject="chemistry" cx="80" cy="330" r="7" />
+            <circle data-subject="chemistry" cx="360" cy="290" r="7" />
+            <circle data-subject="chemistry" cx="400" cy="80" r="7" />
+            <circle data-subject="biology" cx="335" cy="375" r="7" />
+            <circle data-subject="biology" cx="450" cy="340" r="7" />
+            <circle data-subject="biology" cx="530" cy="340" r="7" />
+            <circle data-subject="cs" cx="270" cy="50" r="7" />
+            <circle data-subject="cs" cx="305" cy="125" r="7" />
+            <circle data-subject="cs" cx="480" cy="160" r="7" />
+          </g>
+          <g class="net__done">
+            <circle data-subject="physics" cx="70" cy="150" r="7" />
+          </g>
+          <g class="net__interchanges">
+            <circle cx="150" cy="150" r="11" />
+            <circle cx="230" cy="330" r="11" />
+            <circle cx="400" cy="160" r="11" />
+            <circle cx="400" cy="230" r="11" />
+          </g>
+          <g class="net__labels">
+            <text x="70" y="130" text-anchor="middle">Position</text>
+            <text x="530" y="210" text-anchor="middle">Free fall</text>
+            <text x="216" y="394" text-anchor="end">Power rule</text>
+            <text x="80" y="310" text-anchor="middle">Moles</text>
+            <text x="450" y="368" text-anchor="middle">Punnett</text>
+            <text x="480" y="140" text-anchor="middle">Big-O</text>
+          </g>
+          <g class="net__here">
+            <circle cx="240" cy="190" r="10" />
+            <rect x="256" y="176" width="104" height="28" rx="14" />
+            <text x="308" y="195" text-anchor="middle">You are here</text>
+          </g>
+        </svg>
       </section>
 
-      <!-- ======================================================== the table -->
-      <section class="band" id="table" aria-labelledby="table-title">
+      <!-- ============================================================ lines -->
+      <section class="band" id="lines" aria-labelledby="lines-title">
         <div class="wrap">
           <div class="band__head">
             <div>
-              <p class="label">The table</p>
-              <h2 id="table-title">What's on the table right now</h2>
+              <p class="label">The network</p>
+              <h2 id="lines-title">Lines running now</h2>
             </div>
-            <a class="linkish" id="table-all" href="app/">See every course →</a>
+            <a class="linkish" id="lines-all" href="app/">Open the full map →</a>
           </div>
 
-          <!-- Static subject tiles are the fallback. landing.js replaces them
-               with the real courses from app/api/courses, which is public. -->
-          <ol class="table" id="courses">
-            <li><a class="tile" data-subject="physics" href="app/"><span class="tile__top"><span>01</span></span><span class="tile__sym">Ph</span><span class="tile__name">Physics</span><span class="tile__meta">Motion, forces, energy</span></a></li>
-            <li><a class="tile" data-subject="math" href="app/"><span class="tile__top"><span>02</span></span><span class="tile__sym">Ma</span><span class="tile__name">Mathematics</span><span class="tile__meta">Calculus, from slopes up</span></a></li>
-            <li><a class="tile" data-subject="chemistry" href="app/"><span class="tile__top"><span>03</span></span><span class="tile__sym">Ch</span><span class="tile__name">Chemistry</span><span class="tile__meta">Moles, bonds, reactions</span></a></li>
-            <li><a class="tile" data-subject="biology" href="app/"><span class="tile__top"><span>04</span></span><span class="tile__sym">Bi</span><span class="tile__name">Biology</span><span class="tile__meta">Genes and inheritance</span></a></li>
-            <li><a class="tile" data-subject="cs" href="app/"><span class="tile__top"><span>05</span></span><span class="tile__sym">Cs</span><span class="tile__name">Computer Science</span><span class="tile__meta">Algorithms, Big-O</span></a></li>
+          <!-- Subject rows are the fallback. landing.js replaces them with the
+               real courses and their stops from app/api/courses, which is
+               public. -->
+          <ol class="lines" id="courses">
+            <li><a class="line-row" data-subject="physics" href="app/"><span class="line-row__head"><span class="bullet" aria-hidden="true">1</span><span class="line-row__title">Physics</span><span class="line-row__facts label">Motion, forces, energy</span></span></a></li>
+            <li><a class="line-row" data-subject="math" href="app/"><span class="line-row__head"><span class="bullet" aria-hidden="true">2</span><span class="line-row__title">Mathematics</span><span class="line-row__facts label">Calculus from slopes up</span></span></a></li>
+            <li><a class="line-row" data-subject="chemistry" href="app/"><span class="line-row__head"><span class="bullet" aria-hidden="true">3</span><span class="line-row__title">Chemistry</span><span class="line-row__facts label">Moles and reactions</span></span></a></li>
+            <li><a class="line-row" data-subject="biology" href="app/"><span class="line-row__head"><span class="bullet" aria-hidden="true">4</span><span class="line-row__title">Biology</span><span class="line-row__facts label">Genes and inheritance</span></span></a></li>
+            <li><a class="line-row" data-subject="cs" href="app/"><span class="line-row__head"><span class="bullet" aria-hidden="true">5</span><span class="line-row__title">Computer Science</span><span class="line-row__facts label">Algorithms and Big-O</span></span></a></li>
           </ol>
         </div>
       </section>
 
-      <!-- ================================================= how progress works -->
-      <section class="wrap notebook" id="progress" aria-labelledby="progress-title">
-        <div class="notebook__text">
+      <!-- ====================================================== how it works -->
+      <section class="wrap how" id="how" aria-labelledby="how-title">
+        <div class="how__text">
           <p class="label">How it works</p>
-          <h2 id="progress-title">Every section is a dot. Fill them in.</h2>
+          <h2 id="how-title">Your progress, drawn as a route.</h2>
           <p>
-            A course is a few sections, each one a sitting. Open one and it is started. Mark it
-            complete when it has sunk in. Your syllabus shows exactly where you are, on any
+            A course is a handful of stops, each one a sitting. Open a stop and it is under way.
+            Mark it complete when it has sunk in. Your route shows exactly where you are, on any
             device you sign in from.
           </p>
           <dl class="states">
             <div>
-              <dt><svg class="dot" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.8" fill="none" /></svg>Not started</dt>
+              <dt><span class="key__stop"><span class="stop__dot" data-status="not_started"></span></span>Not started</dt>
               <dd>You haven't opened it yet.</dd>
             </div>
             <div>
-              <dt><svg class="dot" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.8" fill="none" /><path class="fill" d="M6 1.2a4.8 4.8 0 000 9.6z" /></svg>In progress</dt>
+              <dt><span class="key__stop"><span class="stop__dot" data-status="in_progress"></span></span>In progress</dt>
               <dd>Opened, not finished. Primer takes you straight back.</dd>
             </div>
             <div>
-              <dt><svg class="dot" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.8" fill="none" /><circle class="fill" cx="6" cy="6" r="4.8" /></svg>Completed</dt>
-              <dd>You marked it done. Fill every dot and the course is yours.</dd>
+              <dt><span class="key__stop"><span class="stop__dot" data-status="completed"></span></span>Completed</dt>
+              <dd>Marked done. Fill every stop and you've reached the end of the line.</dd>
+            </div>
+            <div>
+              <dt><span class="key__dash"></span>Premium line</dt>
+              <dd>Anyone can see its route. The stops open with Premium.</dd>
             </div>
           </dl>
         </div>
 
-        <!-- A page from a course, as the reader shows it. -->
-        <figure class="specimen" aria-label="A sample lesson page">
+        <!-- A stop from a course, as the reader shows it. -->
+        <figure class="specimen" data-subject="physics" aria-label="A sample stop">
           <div class="specimen__page">
-            <p class="label">Section 3 of 4 · 3 min</p>
+            <p class="label">Line 1 · Stop 3 of 4 · 3 min</p>
             <p class="specimen__title">Speeding up</p>
             <p>When acceleration doesn't change, three equations cover everything:</p>
             <p class="formula"><i>v</i> = <i>v</i><sub>0</sub> + <i>at</i></p>
@@ -172,73 +204,74 @@
               <span>Tip</span>
               Pick the equation with the three things you know and the one you want.
             </div>
-            <p class="specimen__check"><span class="box" aria-hidden="true"></span> Mark complete</p>
+            <div class="specimen__foot">
+              <span class="specimen__check"><span class="box" aria-hidden="true"></span> Mark complete</span>
+              <span class="specimen__next"><span class="label">Next stop</span>Falling →</span>
+            </div>
           </div>
           <figcaption class="label">From <em>Motion in a Straight Line</em></figcaption>
         </figure>
       </section>
 
       <!-- ============================================================ pricing -->
-      <section class="band band--ink" id="pricing" aria-labelledby="pricing-title">
+      <section class="band" id="pricing" aria-labelledby="pricing-title">
         <div class="wrap">
           <div class="band__head">
             <div>
               <p class="label">Pricing</p>
-              <h2 id="pricing-title">Two elements. Pick one.</h2>
+              <h2 id="pricing-title">Two passes. Pick one.</h2>
             </div>
           </div>
 
           <!-- Complete markup: pricing.js only fills in names, prices and the
                Premium tier's id from window.yard.project.tiers, so the page
                never carries a tier id or a price of its own. -->
-          <div class="plans" id="plans">
-            <article class="plan" data-plan="free">
-              <header class="plan__tile">
-                <span class="plan__no">87</span>
-                <span class="plan__sym">Fr</span>
-                <span class="plan__name" data-name>Free</span>
+          <div class="passes" id="plans">
+            <article class="pass" data-plan="free">
+              <header class="pass__head">
+                <span class="pass__name" data-name>Free</span>
+                <span class="pass__zone">Zone 1 · free lines</span>
               </header>
-              <div class="plan__body">
-                <p class="plan__price"><span data-amount>$0</span> <span class="label">forever</span></p>
-                <p class="plan__blurb" data-blurb>Every free course, with your progress saved.</p>
-                <ul class="plan__features" data-features>
+              <div class="pass__body">
+                <p class="pass__price"><span data-amount>$0</span> <span class="label">forever</span></p>
+                <p class="pass__blurb" data-blurb>Every free course, with your progress saved.</p>
+                <ul class="pass__features" data-features>
                   <li>Every free course</li>
                   <li>Progress saved section by section</li>
                   <li>Formulas and code rendered properly</li>
                 </ul>
-                <div class="plan__actions">
-                  <a class="btn btn--lg" id="free-cta" href="__yard/auth/login?return=/app/">Start learning</a>
+                <div class="pass__actions">
+                  <a class="btn btn--lg" id="free-cta" href="__yard/auth/login?return=/app/">Start riding</a>
                 </div>
               </div>
             </article>
 
-            <article class="plan plan--premium" data-plan="premium">
-              <header class="plan__tile">
-                <span class="plan__no">61</span>
-                <span class="plan__sym">Pm</span>
-                <span class="plan__name" data-name>Premium</span>
+            <article class="pass pass--premium" data-plan="premium">
+              <header class="pass__head">
+                <span class="pass__name" data-name>Premium</span>
+                <span class="pass__zone">All zones · every line</span>
               </header>
-              <div class="plan__body">
-                <p class="plan__price"><span data-amount>$20</span> <span class="label" data-per>/ month</span></p>
-                <p class="plan__blurb" data-blurb>The whole table, every course.</p>
-                <ul class="plan__features" data-features>
+              <div class="pass__body">
+                <p class="pass__price"><span data-amount>$20</span> <span class="label" data-per>/ month</span></p>
+                <p class="pass__blurb" data-blurb>Every line on the map, every course.</p>
+                <ul class="pass__features" data-features>
                   <li>Every Premium course</li>
                   <li>Everything in Free</li>
                   <li>New courses the day they are published</li>
                   <li>Cancel any time</li>
                 </ul>
-                <div class="plan__actions">
+                <div class="pass__actions">
                   <!-- data-action buttons are wired by embed.js. The tier id is
                        set by pricing.js; a checkout without one would buy the
                        default tier, which is Free. -->
-                  <button class="btn btn--hot btn--lg" type="button" data-action="checkout" data-buy hidden>Get Premium</button>
+                  <button class="btn btn--primary btn--lg" type="button" data-action="checkout" data-buy hidden>Get Premium</button>
                   <button class="btn btn--lg" type="button" data-action="trial" data-trial hidden>Start a free trial</button>
-                  <p class="plan__current" data-current hidden>
-                    This is your plan.
+                  <p class="pass__current" data-current hidden>
+                    This is your pass.
                     <a data-manage href="https://yard.sh/library">Manage it in your Yard library</a>
                   </p>
-                  <p class="plan__current" data-team hidden>
-                    You're on the project's team, so every course is already open to you.
+                  <p class="pass__current" data-team hidden>
+                    You're on the project's team, so every line is already open to you.
                   </p>
                 </div>
               </div>

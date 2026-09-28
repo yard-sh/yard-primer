@@ -21,17 +21,17 @@
 const PREMIUM_TIER = "Premium";
 
 // The subjects a course can belong to. The app and the landing page read this
-// list from api/me and api/courses, so it lives here and nowhere else. The
-// symbol is the big two letters on a course's tile; each key also has a
-// colour in styles.css (a key without one gets the ink tile).
+// list from api/me and api/courses, so it lives here and nowhere else. Each
+// key is also a line colour in both stylesheets ([data-subject="..."]); a key
+// without one is drawn in ink.
 const SUBJECTS = [
-  { key: "physics", name: "Physics", symbol: "Ph" },
-  { key: "math", name: "Mathematics", symbol: "Ma" },
-  { key: "chemistry", name: "Chemistry", symbol: "Ch" },
-  { key: "biology", name: "Biology", symbol: "Bi" },
-  { key: "cs", name: "Computer Science", symbol: "Cs" },
-  { key: "engineering", name: "Engineering", symbol: "En" },
-  { key: "astronomy", name: "Astronomy", symbol: "As" },
+  { key: "physics", name: "Physics" },
+  { key: "math", name: "Mathematics" },
+  { key: "chemistry", name: "Chemistry" },
+  { key: "biology", name: "Biology" },
+  { key: "cs", name: "Computer Science" },
+  { key: "engineering", name: "Engineering" },
+  { key: "astronomy", name: "Astronomy" },
 ];
 const SUBJECT_KEYS = new Set(SUBJECTS.map((s) => s.key));
 const TIERS = new Set(["free", "premium"]);
@@ -281,6 +281,7 @@ async function listCourses(env, me) {
     .all();
 
   const mine = new Map();
+  const status = new Map();
   if (me.authenticated) {
     const rows = await env.DB.prepare(
       "SELECT course_id, SUM(status = 'completed') AS completed, SUM(status = 'in_progress') AS in_progress," +
@@ -289,11 +290,26 @@ async function listCourses(env, me) {
       .bind(me.user_id)
       .all();
     for (const row of rows.results) mine.set(row.course_id, row);
+    const each = await env.DB.prepare("SELECT section_id, status FROM progress WHERE user_id = ?1")
+      .bind(me.user_id)
+      .all();
+    for (const row of each.results) status.set(row.section_id, row.status);
+  }
+
+  // Every course's stops (section titles, never bodies) so the catalog can
+  // draw each line with its station names. The syllabus is public anyway.
+  const stops = new Map();
+  const sections = await env.DB.prepare(
+    "SELECT id, course_id, title FROM sections ORDER BY course_id, position, created_at",
+  ).all();
+  for (const s of sections.results) {
+    if (!stops.has(s.course_id)) stops.set(s.course_id, []);
+    stops.get(s.course_id).push({ id: s.id, title: s.title, status: status.get(s.id) || "not_started" });
   }
 
   return json({
     subjects: SUBJECTS,
-    courses: results.map((row) => courseView(row, me, mine.get(row.id))),
+    courses: results.map((row) => ({ ...courseView(row, me, mine.get(row.id)), stops: stops.get(row.id) || [] })),
   });
 }
 
@@ -501,9 +517,9 @@ async function createCourse(request, env, me) {
   const tier = tierOf(body.tier === undefined ? "free" : body.tier);
 
   const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM courses").first();
-  if (count.n >= MAX_COURSES) throw new Refusal(409, "too_many", `a table holds ${MAX_COURSES} courses at most`);
+  if (count.n >= MAX_COURSES) throw new Refusal(409, "too_many", `the map holds ${MAX_COURSES} courses at most`);
 
-  // New courses start as drafts at the end of the table. INSERT OR IGNORE
+  // New courses start as drafts at the end of the map. INSERT OR IGNORE
   // plus a retry covers the (very) rare id collision without a second query.
   for (let attempt = 0; attempt < 3; attempt++) {
     const id = makeId(title);

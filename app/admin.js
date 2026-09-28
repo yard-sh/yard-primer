@@ -1,11 +1,11 @@
-// The admin panel: the table of courses with stats, the course editor and
+// The admin panel: every line with its stats, the course editor and
 // the section editor.
 //
 // Who counts as an admin is decided by the server alone: everyone on the
 // project's Yard team (X-Yard-Entitlement: owner). The app hides the Admin
 // link from everyone else, but every route under api/admin checks again.
 
-import { state, api, el, guard, toast, pad, plural, sym, subjectOf, signInLink, confirmSheet } from "./ui.js";
+import { state, api, el, guard, toast, pad, plural, bullet, subjectOf, signInLink, confirmSheet } from "./ui.js";
 import { renderMarkdown, typeset } from "./markdown.js";
 
 // Matches MAX_BODY and friends in _service.js, which enforces them.
@@ -50,7 +50,7 @@ function subjectSelect(value) {
   return el(
     "select",
     { class: "input", name: "subject", required: true },
-    state.me.subjects.map((s) => el("option", { value: s.key, selected: s.key === value, text: `${s.symbol} · ${s.name}` })),
+    state.me.subjects.map((s) => el("option", { value: s.key, selected: s.key === value, text: s.name })),
   );
 }
 
@@ -96,7 +96,7 @@ export async function renderAdmin(ctx) {
     ].map(([label, value]) => el("div", {}, el("dt", { text: label }), el("dd", { text: String(value) }))),
   );
 
-  // New course: a draft at the end of the table, then straight to its editor.
+  // New course: a draft at the end of the map, then straight to its editor.
   const title = el("input", { class: "input", name: "title", required: true, maxlength: MAX_COURSE_TITLE, placeholder: "Orbits and Gravity" });
   const form = el(
     "form",
@@ -139,10 +139,10 @@ export async function renderAdmin(ctx) {
       el(
         "td",
         {},
-        el("span", { class: "title-cell" }, sym(c.subject), el("a", { href: `#/admin/course/${c.id}`, text: c.title })),
+        el("span", { class: "title-cell" }, bullet(c.subject, i + 1, "sm"), el("a", { href: `#/admin/course/${c.id}`, text: c.title })),
       ),
       el("td", { class: "label", text: c.tier === "premium" ? state.me.premium_tier : "Free" }),
-      el("td", {}, c.published ? el("span", { class: "label", text: "Live" }) : el("span", { class: "stamp stamp--draft", text: "Draft" })),
+      el("td", {}, c.published ? el("span", { class: "label", text: "Live" }) : el("span", { class: "badge badge--draft", text: "Draft" })),
       el("td", { class: "num", text: String(c.sections) }),
       el("td", { class: "num", text: String(s.started) }),
       el("td", { class: "num", text: String(s.finished) }),
@@ -194,7 +194,7 @@ export async function renderAdmin(ctx) {
           "div",
           {},
           el("p", { class: "label", text: "Admin" }),
-          el("h1", { text: "Run the table" }),
+          el("h1", { text: "Run the network" }),
           el("p", {
             text: "Everyone on this project's Yard team is an admin here, and nobody else is. To add an admin, invite them to the team from the Yard dashboard.",
           }),
@@ -259,7 +259,7 @@ export async function renderCourseEditor(ctx, id) {
       onclick: () =>
         guard(async () => {
           await api(`api/admin/courses/${id}`, { method: "PATCH", body: { published: !course.published } });
-          toast(course.published ? "Unpublished. Only the team can see it now." : "Published. It is on the table.");
+          toast(course.published ? "Unpublished. Only the team can see it now." : "Published. It is on the map.");
           state.dirty = false;
           renderCourseEditor(ctx, id);
         }),
@@ -393,10 +393,10 @@ export async function renderCourseEditor(ctx, id) {
             el(
               "div",
               { class: "publish-state" },
-              course.published ? null : el("span", { class: "stamp stamp--draft", text: "Draft" }),
+              course.published ? null : el("span", { class: "badge badge--draft", text: "Draft" }),
               el("p", {
                 text: course.published
-                  ? "On the table. Everyone can see the syllabus."
+                  ? "On the map. Everyone can see its route."
                   : sections.length
                     ? "A draft. Only the team can see it."
                     : "A draft. Add a section before publishing.",

@@ -5,7 +5,7 @@
 // URL would resolve against the domain root. Routes live in the hash for the
 // same reason:
 //
-//   #/                        the table (catalog)
+//   #/                        the map of lines (catalog)
 //   #/course/<id>             a course and its syllabus
 //   #/course/<id>/<section>   the reader
 //   #/admin                   courses, stats, new course

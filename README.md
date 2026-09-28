@@ -4,10 +4,12 @@
 <a href="https://dash.yard.sh/projects?action=create&repo=https%3A%2F%2Fgithub.com%2Fyard-sh%2Fyard-primer"><img src="https://yard.sh/create-in-yard.png" width="200" alt="Create in Yard" /></a>
 </p>
 
-A small online course site for STEM subjects, hosted end to end on Yard. Every
-course is a tile on a periodic table. Learners sign in, start a course, and
-work through its sections. Each section is *not started*, *in progress* or
-*completed*, and that progress is saved to their account. Some courses are
+A small online course site for STEM subjects, hosted end to end on Yard,
+drawn as a transit map. Every course is a coloured line and every section is a
+stop on it. Learners sign in, start a course, and ride it stop by stop. Each
+stop is *not started* (an empty station), *in progress* (a bullseye) or
+*completed* (a filled station), and that progress is saved to their account.
+A Premium course a learner can't open yet is drawn as a dashed line. Some courses are
 Free and some need **Premium**, a $20 a month subscription. The project's
 team edits everything from a built-in admin panel.
 
@@ -38,16 +40,16 @@ Plan requirements:
       settings.json         the service, the landing page, and the Free and Premium tiers
       migrations/
         0001_init.sql       courses, sections, progress
-        0002_seed.sql       five sample courses, so the table isn't empty
+        0002_seed.sql       five sample courses, so the map isn't empty
     app/                    the deployable bundle (the services[] entry with dir: app)
       _service.js           the whole backend: routes, access rules, admin API
       index.html            app shell
       app.js                boot, hash router, header, refresh on focus
-      ui.js                 API helper, tiles, progress dots, sheets
+      ui.js                 API helper, line bullets, stops, strip maps, routes, sheets
       learn.js              catalog, course page, reader
       admin.js              dashboard, course editor, section editor
       markdown.js           the safe Markdown renderer, plus KaTeX for math
-      styles.css            design tokens (light and dark), graph paper, tiles
+      styles.css            design tokens (light and dark), line colours, the map's parts
     landing-page/           the public page: live catalog, how it works, pricing
 
 ## How it fits together
@@ -117,10 +119,11 @@ It also supports:
 - `> [!NOTE]`, `[!TIP]`, `[!WARNING]` and `[!EXAMPLE]` callouts
 - tables, lists and fenced code
 
-**Subjects** are the `SUBJECTS` list in `_service.js`, each a key, a name and
-a two-letter symbol. The app and the landing page read the list from the
-API. Each subject's colour is a `[data-subject="…"]` rule in both
-stylesheets.
+**Subjects are lines.** `SUBJECTS` in `_service.js` lists each subject's key
+and name, and the app and the landing page read that list from the API. Each
+subject's line colour is a `[data-subject="…"]` rule in both stylesheets,
+with a lighter variant for dark mode. A course's bullet number is its place
+in the catalog.
 
 **Relative URLs only.** The app is mounted at `/<slug>/app/`, so it calls
 `fetch("api/courses")`, never `/api/courses`, and routes live in the hash
