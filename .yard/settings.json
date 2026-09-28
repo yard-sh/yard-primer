@@ -1,0 +1,46 @@
+{
+  "version": 7,
+  "project_slug": "primer",
+  "ignore_files": [],
+  "services": [
+    {
+      "dir": "app",
+      "name": "app",
+      "url": "/app",
+      "access": "public",
+      "database_access": true
+    }
+  ],
+  "landing_page": {
+    "type": "custom",
+    "dir": "landing-page"
+  },
+  "pricing": {
+    "tiers": [
+      {
+        "name": "Free",
+        "price_cents": 0,
+        "is_default": true,
+        "pricing_model": "one_time",
+        "description": "Every free course, with your progress saved",
+        "features": [
+          "Every free course",
+          "Progress saved section by section",
+          "Formulas and code rendered properly"
+        ]
+      },
+      {
+        "name": "Premium",
+        "price_cents": 2000,
+        "pricing_model": "subscription",
+        "description": "The whole table, every course",
+        "features": [
+          "Every Premium course",
+          "Everything in Free",
+          "New courses the day they are published",
+          "Cancel any time"
+        ]
+      }
+    ]
+  }
+}
