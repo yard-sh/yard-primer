@@ -5,7 +5,7 @@
 // URL would resolve against the domain root. Routes live in the hash for the
 // same reason:
 //
-//   #/                        the course catalog
+//   #/                        the course catalog (#/?q=…&subject=… filters it)
 //   #/course/<id>             a course and its syllabus
 //   #/course/<id>/<section>   the reader
 //   #/admin                   courses, stats, new course
@@ -24,7 +24,7 @@ let token = 0;
 let currentHash = location.hash;
 
 const ROUTES = [
-  [/^#?\/?$/, "catalog", renderCatalog],
+  [/^#?\/?(?:\?[^#]*)?$/, "catalog", renderCatalog],
   [/^#\/course\/([a-z0-9-]+)$/, "catalog", renderCourse],
   [/^#\/course\/([a-z0-9-]+)\/([a-z0-9-]+)$/, "catalog", renderReader],
   [/^#\/admin$/, "admin", renderAdmin],
@@ -223,6 +223,17 @@ async function main() {
     return;
   }
   renderHeader();
+
+  // A search submitted from the landing page without JavaScript arrives as
+  // app/?q=…; move it into the hash, where the catalog reads it.
+  const search = new URLSearchParams(location.search);
+  if (search.has("q") || search.has("subject")) {
+    const params = new URLSearchParams();
+    for (const key of ["q", "subject"]) if (search.get(key)) params.set(key, search.get(key));
+    const hash = params.toString() ? `#/?${params}` : "#/";
+    history.replaceState(null, "", location.pathname + hash);
+    currentHash = hash;
+  }
 
   // Back from Yard Auth: return to the page the visitor signed in from.
   let after = null;

@@ -22,7 +22,7 @@ There is no login code and no users table.
 
 It serves two URLs:
 
-- `https://<team>.yard.sh/<slug>/`: the landing page, with a live catalog and pricing
+- `https://<team>.yard.sh/<slug>/`: the landing page, with search, a live catalog and pricing
 - `https://<team>.yard.sh/<slug>/app/`: the course site and the admin panel
 
 Use the button above, or paste this repository's URL into the "Create from
@@ -50,7 +50,7 @@ Plan requirements:
       admin.js              dashboard, course editor, section editor
       markdown.js           the safe Markdown renderer, plus KaTeX for math
       styles.css            design tokens (light and dark), full-width layout, cards
-    landing-page/           the public page: live catalog, how it works, pricing
+    landing-page/           the public page: search, catalog, subjects, pricing, FAQ
 
 ## How it fits together
 
@@ -121,9 +121,32 @@ It also supports:
 
 **Subjects.** `SUBJECTS` in `_service.js` lists each subject's key and name,
 and the app and the landing page read that list from the API. Each subject's
-accent colour (the stripe on its cards, its progress bars and status icons)
-is a `[data-subject="…"]` rule in both stylesheets, with a lighter variant
-for dark mode.
+colour (its course covers, progress bars and status icons) and its cover
+drawing (`--motif`, an SVG used as a mask) are `[data-subject="…"]` rules in
+both stylesheets, with lighter colours for dark mode. A subject without a
+rule is drawn in ink with a plain cover.
+
+**Course cards.** The app's catalog and the landing page draw the same card:
+a cover in the subject's colour, the subject, the title, "You'll learn" with
+the first section titles, and a meta line (tier, sections, minutes). Signed
+in learners who have started a course also see their progress.
+
+**Search and filter links.** The catalog reads its search and subject filter
+from the hash, so any page can link to a filtered view: `app/#/?q=moles`,
+`app/#/?subject=physics`, or both. The landing page's search forms go there
+directly, and without JavaScript they submit `app/?q=…`, which the app moves
+into the hash on load.
+
+**The landing page** is laid out like the big course catalogs: a header with
+search and "Join for free", a hero, the catalog in numbers, "Courses to get
+you started" (All, Free and Premium tabs, eight cards at a time with "Show
+more"), explore by subject, how Primer works, pricing, an FAQ and a footer
+with subject links. Every number and card comes from `app/api/courses`; the
+page ships with static subject cards and links as a fallback, and the stats
+strip stays hidden until the real numbers arrive. There are no testimonials,
+ratings or partner logos, since the template has no real ones to show; add
+them once you do. Edit the FAQ in `landing-page/index.html` to match how you
+run your Primer.
 
 **Layout.** The app spans the whole window, with side padding that grows with
 it (`--gutter`). The course grid adds columns as the window widens, and on

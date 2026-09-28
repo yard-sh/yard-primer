@@ -149,36 +149,40 @@ export function progressBar(done, total) {
   );
 }
 
-// One course in the catalog grid.
+// One course in the catalog grid: a cover in the subject's colour (its line
+// drawing comes from styles.css), then subject, title, what you'll learn
+// (the first section titles), and a meta line. Signed-in learners who have
+// started the course also get a progress bar.
 export function courseCard(course) {
   const subject = subjectOf(course.subject);
   const p = course.progress;
   const done = p ? p.completed : 0;
   const locked = course.access === "premium";
+  const learn = (course.outline || []).slice(0, 3).map((s) => s.title);
+  const tier = course.tier === "premium" ? (state.me && state.me.premium_tier) || "Premium" : "Free";
   return el(
     "a",
     { class: "card" + (locked ? " is-locked" : ""), href: `#/course/${course.id}`, "data-subject": course.subject },
+    el("span", { class: "cover", "aria-hidden": "true" }, el("span", { class: "cover__badges" }, badges(course))),
     el(
       "span",
-      { class: "card__top" },
+      { class: "card__body" },
       el("span", { class: "card__subject" }, el("span", { class: "dot", "aria-hidden": "true" }), subject.name),
-      el("span", { class: "card__badges" }, badges(course)),
-    ),
-    el("span", { class: "card__title", text: course.title }),
-    course.summary ? el("span", { class: "card__summary", text: course.summary }) : null,
-    el(
-      "span",
-      { class: "card__foot" },
-      el("span", { class: "label", text: `${plural(course.sections, "section")} · ${course.minutes} min` }),
-      p && course.sections && !locked && p.completed + p.in_progress > 0
-        ? el(
-            "span",
-            { class: "card__progress" },
-            progressBar(done, course.sections),
-            el("span", { class: "label", text: done === course.sections ? "Completed" : `${done} of ${course.sections} done` }),
-          )
-        : null,
-      locked ? el("span", { class: "card__lock label", text: "Unlocks with Premium" }) : null,
+      el("span", { class: "card__title", text: course.title }),
+      learn.length ? el("span", { class: "card__learn" }, el("b", { text: "You'll learn: " }), learn.join(", ")) : null,
+      el(
+        "span",
+        { class: "card__foot" },
+        el("span", { class: "label", text: `${tier} · ${plural(course.sections, "section")} · ${course.minutes} min` }),
+        p && course.sections && !locked && p.completed + p.in_progress > 0
+          ? el(
+              "span",
+              { class: "card__progress" },
+              progressBar(done, course.sections),
+              el("span", { class: "label", text: done === course.sections ? "Completed" : `${done} of ${course.sections} done` }),
+            )
+          : null,
+      ),
     ),
   );
 }

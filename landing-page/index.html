@@ -46,11 +46,20 @@
           </svg>
           <span class="brand__name">Primer</span>
         </a>
+
+        <!-- Works without JavaScript: a GET to app/?q=… is moved into the
+             app's hash by app.js. landing.js goes straight to app/#/?q=…. -->
+        <form class="search search--bar" action="app/" method="get" role="search" data-search>
+          <span class="search__icon" aria-hidden="true"></span>
+          <input class="search__input" type="search" name="q" placeholder="What do you want to learn?" aria-label="Search courses" maxlength="100" />
+        </form>
+
         <nav class="bar__nav" aria-label="Sections">
           <a href="#courses">Courses</a>
-          <a href="#how">How it works</a>
           <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
         </nav>
+
         <div class="bar__end">
           <button class="iconbtn" id="theme-toggle" type="button" title="Switch theme" aria-label="Switch theme">
             <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
@@ -72,170 +81,274 @@
       <!-- ================================================================ hero -->
       <section class="hero wrap">
         <div class="hero__text">
-          <p class="label">Primer</p>
-          <h1>Short courses in the sciences.</h1>
+          <h1>Learn how things work.</h1>
           <p class="hero__lede" data-yard="tagline">
-            Physics, maths, chemistry, biology and computing. Each course is a handful of short
-            sections you can finish in a sitting, with the formulas typeset properly and your
+            Short courses in physics, maths, chemistry, biology, computing, engineering and
+            astronomy. Each one is a handful of sections you can finish in a sitting, with your
             progress saved as you go.
           </p>
-          <div class="actions">
-            <a class="btn btn--primary btn--lg" href="app/">Browse courses</a>
-            <a class="btn btn--lg" href="#pricing">See pricing</a>
+          <form class="search search--hero" action="app/" method="get" role="search" data-search>
+            <span class="search__icon" aria-hidden="true"></span>
+            <input class="search__input" type="search" name="q" placeholder="What do you want to learn?" aria-label="Search courses" maxlength="100" />
+            <button class="btn btn--primary" type="submit">Search</button>
+          </form>
+          <div class="actions hero__actions">
+            <a class="btn btn--primary btn--lg" id="hero-cta" href="__yard/auth/login?return=/app/">Join for free</a>
+            <a class="btn btn--lg" href="app/">Browse courses</a>
           </div>
-          <p class="hero__note label">Free to start · No card needed</p>
         </div>
 
         <!-- What a course looks like once you've started it. -->
         <div class="preview" data-subject="physics" aria-label="A course in progress" role="img">
-          <p class="preview__meta"><span class="dot"></span>Physics <span class="label">· Free</span></p>
-          <p class="preview__title">Motion in a Straight Line</p>
-          <div class="preview__progress">
-            <span class="progress"><span class="progress__bar" style="width: 50%"></span></span>
-            <span><b>2 of 4</b> sections done</span>
+          <span class="cover"><span class="cover__badges"><span class="badge">Free</span></span></span>
+          <div class="preview__body">
+            <p class="card__subject"><span class="dot"></span>Physics</p>
+            <p class="preview__title">Motion in a Straight Line</p>
+            <div class="preview__progress">
+              <span class="progress"><span class="progress__bar" style="width: 50%"></span></span>
+              <span><b>2 of 4</b> sections done</span>
+            </div>
+            <ol class="preview__sections">
+              <li><span class="status-icon" data-status="completed"></span><span>Where is it?</span></li>
+              <li><span class="status-icon" data-status="completed"></span><span>How fast, and which way</span></li>
+              <li><span class="status-icon" data-status="in_progress"></span><span>Speeding up <span class="badge badge--next">Up next</span></span></li>
+              <li><span class="status-icon" data-status="not_started"></span><span>Falling</span></li>
+            </ol>
           </div>
-          <ol class="preview__sections">
-            <li><span class="status-icon" data-status="completed"></span><span>Where is it?</span><span class="label">Done</span></li>
-            <li><span class="status-icon" data-status="completed"></span><span>How fast, and which way</span><span class="label">Done</span></li>
-            <li><span class="status-icon" data-status="in_progress"></span><span>Speeding up <span class="badge badge--next">Up next</span></span><span class="label">In progress</span></li>
-            <li><span class="status-icon" data-status="not_started"></span><span>Falling</span><span class="label">Not started</span></li>
-          </ol>
-          <span class="btn btn--primary preview__cta">Continue: Speeding up</span>
         </div>
+      </section>
+
+      <!-- ====================================================== stat strip -->
+      <!-- Real numbers from the catalog, filled in by landing.js. Hidden until
+           then, so it never shows a figure that isn't true. -->
+      <section class="stats" id="stats" aria-label="The catalog in numbers" hidden>
+        <dl class="wrap stats__row">
+          <div><dt>Courses</dt><dd data-stat="courses"></dd></div>
+          <div><dt>Sections</dt><dd data-stat="sections"></dd></div>
+          <div><dt>Subjects</dt><dd data-stat="subjects"></dd></div>
+          <div><dt>Hours of material</dt><dd data-stat="hours"></dd></div>
+          <div><dt>Free to start</dt><dd data-stat="free"></dd></div>
+        </dl>
       </section>
 
       <!-- ========================================================== courses -->
-      <section class="band" id="courses" aria-labelledby="courses-title">
-        <div class="wrap">
-          <div class="band__head">
-            <div>
-              <p class="label">Courses</p>
-              <h2 id="courses-title">Start with any of these</h2>
-            </div>
-            <a class="linkish" id="courses-all" href="app/">See all courses →</a>
-          </div>
-
-          <!-- Subject cards are the fallback. landing.js replaces them with
-               the real courses from app/api/courses, which is public. -->
-          <ul class="grid" id="course-grid">
-            <li><a class="card" data-subject="physics" href="app/"><span class="card__top"><span class="card__subject"><span class="dot"></span>Physics</span></span><span class="card__title">Motion and forces</span><span class="card__summary">Position, velocity, acceleration and falling objects.</span></a></li>
-            <li><a class="card" data-subject="math" href="app/"><span class="card__top"><span class="card__subject"><span class="dot"></span>Mathematics</span></span><span class="card__title">Calculus from slopes up</span><span class="card__summary">What a derivative measures, and the rules that make it quick.</span></a></li>
-            <li><a class="card" data-subject="chemistry" href="app/"><span class="card__top"><span class="card__subject"><span class="dot"></span>Chemistry</span></span><span class="card__title">Moles and reactions</span><span class="card__summary">Counting atoms, and balanced equations as recipes.</span></a></li>
-            <li><a class="card" data-subject="biology" href="app/"><span class="card__top"><span class="card__subject"><span class="dot"></span>Biology</span></span><span class="card__title">Genes and inheritance</span><span class="card__summary">Alleles, Punnett squares and Mendel's peas.</span></a></li>
-            <li><a class="card" data-subject="cs" href="app/"><span class="card__top"><span class="card__subject"><span class="dot"></span>Computer Science</span></span><span class="card__title">Algorithms and Big-O</span><span class="card__summary">Counting the work a program does, and binary search.</span></a></li>
-          </ul>
+      <section class="wrap block" id="courses" aria-labelledby="courses-title">
+        <div class="block__head">
+          <h2 id="courses-title">Courses to get you started</h2>
+          <p>Pick a course, open the first section, and your place is saved from there.</p>
         </div>
+
+        <div class="tabs" role="tablist" aria-label="Course filter" id="course-tabs" hidden>
+          <button class="tab" role="tab" type="button" data-tab="all" aria-selected="true">All courses</button>
+          <button class="tab" role="tab" type="button" data-tab="free" aria-selected="false">Free</button>
+          <button class="tab" role="tab" type="button" data-tab="premium" aria-selected="false">Premium</button>
+        </div>
+
+        <!-- Subject cards are the fallback. landing.js replaces them with the
+             real courses from app/api/courses, which is public. -->
+        <ul class="grid" id="course-grid" role="tabpanel" aria-labelledby="courses-title">
+          <li><a class="card" data-subject="physics" href="app/#/?subject=physics"><span class="cover" aria-hidden="true"></span><span class="card__body"><span class="card__subject"><span class="dot"></span>Physics</span><span class="card__title">Motion, energy and waves</span></span></a></li>
+          <li><a class="card" data-subject="math" href="app/#/?subject=math"><span class="cover" aria-hidden="true"></span><span class="card__body"><span class="card__subject"><span class="dot"></span>Mathematics</span><span class="card__title">Calculus, probability and vectors</span></span></a></li>
+          <li><a class="card" data-subject="chemistry" href="app/#/?subject=chemistry"><span class="cover" aria-hidden="true"></span><span class="card__body"><span class="card__subject"><span class="dot"></span>Chemistry</span><span class="card__title">Atoms, bonds and moles</span></span></a></li>
+          <li><a class="card" data-subject="biology" href="app/#/?subject=biology"><span class="cover" aria-hidden="true"></span><span class="card__body"><span class="card__subject"><span class="dot"></span>Biology</span><span class="card__title">Cells, genes and ecosystems</span></span></a></li>
+        </ul>
+
+        <div class="block__more">
+          <button class="btn" type="button" id="show-more" hidden>Show more</button>
+          <a class="linkish" href="app/">Browse the full catalog →</a>
+        </div>
+      </section>
+
+      <!-- ========================================================= subjects -->
+      <section class="wrap block" id="subjects" aria-labelledby="subjects-title">
+        <div class="block__head">
+          <h2 id="subjects-title">Explore by subject</h2>
+        </div>
+        <ul class="subjects" id="subject-list">
+          <li><a class="subject" data-subject="physics" href="app/#/?subject=physics"><span class="dot"></span><span class="subject__name">Physics</span></a></li>
+          <li><a class="subject" data-subject="math" href="app/#/?subject=math"><span class="dot"></span><span class="subject__name">Mathematics</span></a></li>
+          <li><a class="subject" data-subject="chemistry" href="app/#/?subject=chemistry"><span class="dot"></span><span class="subject__name">Chemistry</span></a></li>
+          <li><a class="subject" data-subject="biology" href="app/#/?subject=biology"><span class="dot"></span><span class="subject__name">Biology</span></a></li>
+          <li><a class="subject" data-subject="cs" href="app/#/?subject=cs"><span class="dot"></span><span class="subject__name">Computer Science</span></a></li>
+          <li><a class="subject" data-subject="engineering" href="app/#/?subject=engineering"><span class="dot"></span><span class="subject__name">Engineering</span></a></li>
+          <li><a class="subject" data-subject="astronomy" href="app/#/?subject=astronomy"><span class="dot"></span><span class="subject__name">Astronomy</span></a></li>
+        </ul>
       </section>
 
       <!-- ====================================================== how it works -->
-      <section class="wrap how" id="how" aria-labelledby="how-title">
-        <div class="how__text">
-          <p class="label">How it works</p>
-          <h2 id="how-title">Pick up right where you left off.</h2>
-          <p>
-            Every course is a few sections, each one a sitting. Open a section and it is in
-            progress. Mark it complete when it has sunk in. Your place is saved to your account,
-            so you can carry on from any device you sign in from.
-          </p>
-          <dl class="states">
-            <div>
-              <dt><span class="status-icon" data-status="not_started"></span>Not started</dt>
-              <dd>You haven't opened it yet.</dd>
-            </div>
-            <div>
-              <dt><span class="status-icon" data-status="in_progress"></span>In progress</dt>
-              <dd>Opened, not finished. Primer takes you straight back.</dd>
-            </div>
-            <div>
-              <dt><span class="status-icon" data-status="completed"></span>Done</dt>
-              <dd>Marked complete. Finish every section and the course is done.</dd>
-            </div>
-          </dl>
-        </div>
-
-        <!-- A section as the reader shows it. -->
-        <figure class="specimen" data-subject="physics" aria-label="A sample section">
-          <div class="specimen__page">
-            <p class="label">Section 3 of 4 · 3 min</p>
-            <p class="specimen__title">Speeding up</p>
-            <p>When acceleration doesn't change, three equations cover everything:</p>
-            <p class="formula"><i>v</i> = <i>v</i><sub>0</sub> + <i>at</i></p>
-            <p class="formula"><i>x</i> = <i>x</i><sub>0</sub> + <i>v</i><sub>0</sub><i>t</i> + ½<i>at</i><sup>2</sup></p>
-            <div class="specimen__tip">
-              <span>Tip</span>
-              Pick the equation with the three things you know and the one you want.
-            </div>
-            <div class="specimen__foot">
-              <span class="specimen__check"><span class="box" aria-hidden="true"></span> Mark complete</span>
-              <span class="specimen__next"><span class="label">Next section</span>Falling →</span>
-            </div>
+      <section class="band" id="how" aria-labelledby="how-title">
+        <div class="wrap">
+          <div class="block__head">
+            <h2 id="how-title">How Primer works</h2>
           </div>
-          <figcaption class="label">From <em>Motion in a Straight Line</em></figcaption>
-        </figure>
+          <ol class="steps">
+            <li class="step">
+              <div class="step__art step__art--card" data-subject="chemistry" aria-hidden="true">
+                <span class="cover"></span>
+                <span class="step__lines"><i></i><i></i></span>
+              </div>
+              <h3><span class="step__no">1</span> Pick a course</h3>
+              <p>Browse the catalog or search for a topic. Every course's sections are listed up front, so you know what you'll learn.</p>
+            </li>
+            <li class="step">
+              <div class="step__art step__art--status" data-subject="math" aria-hidden="true">
+                <span class="status-icon" data-status="completed"></span>
+                <span class="status-icon" data-status="in_progress"></span>
+                <span class="status-icon" data-status="not_started"></span>
+              </div>
+              <h3><span class="step__no">2</span> Learn a section at a time</h3>
+              <p>Each section is short enough for one sitting, with worked examples and formulas typeset properly.</p>
+            </li>
+            <li class="step">
+              <div class="step__art step__art--progress" data-subject="biology" aria-hidden="true">
+                <span class="progress"><span class="progress__bar" style="width: 75%"></span></span>
+                <span class="step__caption">3 of 4 done</span>
+              </div>
+              <h3><span class="step__no">3</span> Pick up where you left off</h3>
+              <p>Your progress is saved to your account, so you can carry on from any device you sign in from.</p>
+            </li>
+          </ol>
+        </div>
       </section>
 
       <!-- ============================================================ pricing -->
-      <section class="band band--center" id="pricing" aria-labelledby="pricing-title">
-        <div class="wrap">
-          <div class="band__head">
-            <div>
-              <p class="label">Pricing</p>
-              <h2 id="pricing-title">Two plans. Pick one.</h2>
+      <section class="wrap block block--center" id="pricing" aria-labelledby="pricing-title">
+        <div class="block__head">
+          <h2 id="pricing-title">Two plans. Pick one.</h2>
+          <p>Start free. Upgrade when you want every course.</p>
+        </div>
+
+        <!-- Complete markup: pricing.js only fills in names, prices and the
+             Premium tier's id from window.yard.project.tiers, so the page
+             never carries a tier id or a price of its own. -->
+        <div class="plans" id="plans">
+          <article class="plan" data-plan="free">
+            <p class="plan__name" data-name>Free</p>
+            <p class="plan__price"><span data-amount>$0</span> <span class="label">forever</span></p>
+            <p class="plan__blurb" data-blurb>Every free course, with your progress saved.</p>
+            <ul class="plan__features" data-features>
+              <li>Every free course</li>
+              <li>Progress saved section by section</li>
+              <li>Formulas and code rendered properly</li>
+            </ul>
+            <div class="plan__actions">
+              <a class="btn btn--lg" id="free-cta" href="__yard/auth/login?return=/app/">Start learning</a>
             </div>
+          </article>
+
+          <article class="plan plan--premium" data-plan="premium">
+            <p class="plan__name"><span data-name>Premium</span> <span class="badge">Every course</span></p>
+            <p class="plan__price"><span data-amount>$20</span> <span class="label" data-per>/ month</span></p>
+            <p class="plan__blurb" data-blurb>Every course in the catalog.</p>
+            <ul class="plan__features" data-features>
+              <li>Every Premium course</li>
+              <li>Everything in Free</li>
+              <li>New courses the day they are published</li>
+              <li>Cancel any time</li>
+            </ul>
+            <div class="plan__actions">
+              <!-- data-action buttons are wired by embed.js. The tier id is
+                   set by pricing.js; a checkout without one would buy the
+                   default tier, which is Free. -->
+              <button class="btn btn--primary btn--lg" type="button" data-action="checkout" data-buy hidden>Get Premium</button>
+              <button class="btn btn--lg" type="button" data-action="trial" data-trial hidden>Start a free trial</button>
+              <p class="plan__current" data-current hidden>
+                This is your plan.
+                <a data-manage href="https://yard.sh/library">Manage it in your Yard library</a>
+              </p>
+              <p class="plan__current" data-team hidden>
+                You're on the project's team, so every course is already open to you.
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ================================================================ faq -->
+      <section class="band" id="faq" aria-labelledby="faq-title">
+        <div class="wrap faq">
+          <div class="block__head">
+            <h2 id="faq-title">Frequently asked questions</h2>
           </div>
-
-          <!-- Complete markup: pricing.js only fills in names, prices and the
-               Premium tier's id from window.yard.project.tiers, so the page
-               never carries a tier id or a price of its own. -->
-          <div class="plans" id="plans">
-            <article class="plan" data-plan="free">
-              <p class="plan__name" data-name>Free</p>
-              <p class="plan__price"><span data-amount>$0</span> <span class="label">forever</span></p>
-              <p class="plan__blurb" data-blurb>Every free course, with your progress saved.</p>
-              <ul class="plan__features" data-features>
-                <li>Every free course</li>
-                <li>Progress saved section by section</li>
-                <li>Formulas and code rendered properly</li>
-              </ul>
-              <div class="plan__actions">
-                <a class="btn btn--lg" id="free-cta" href="__yard/auth/login?return=/app/">Start learning</a>
-              </div>
-            </article>
-
-            <article class="plan plan--premium" data-plan="premium">
-              <p class="plan__name"><span data-name>Premium</span> <span class="badge">Every course</span></p>
-              <p class="plan__price"><span data-amount>$20</span> <span class="label" data-per>/ month</span></p>
-              <p class="plan__blurb" data-blurb>Every course in the catalog.</p>
-              <ul class="plan__features" data-features>
-                <li>Every Premium course</li>
-                <li>Everything in Free</li>
-                <li>New courses the day they are published</li>
-                <li>Cancel any time</li>
-              </ul>
-              <div class="plan__actions">
-                <!-- data-action buttons are wired by embed.js. The tier id is
-                     set by pricing.js; a checkout without one would buy the
-                     default tier, which is Free. -->
-                <button class="btn btn--primary btn--lg" type="button" data-action="checkout" data-buy hidden>Get Premium</button>
-                <button class="btn btn--lg" type="button" data-action="trial" data-trial hidden>Start a free trial</button>
-                <p class="plan__current" data-current hidden>
-                  This is your plan.
-                  <a data-manage href="https://yard.sh/library">Manage it in your Yard library</a>
-                </p>
-                <p class="plan__current" data-team hidden>
-                  You're on the project's team, so every course is already open to you.
-                </p>
-              </div>
-            </article>
+          <div class="faq__list">
+            <details>
+              <summary>Is Primer free?</summary>
+              <p>Yes. Every course marked Free is free to take, with your progress saved, as long as you're signed in. Premium courses need the Premium plan.</p>
+            </details>
+            <details>
+              <summary>What does Premium include?</summary>
+              <p>Every course in the catalog, Free and Premium, including new courses the day they are published. It's a monthly subscription; the price is in the Pricing section above.</p>
+            </details>
+            <details>
+              <summary>Do I need an account?</summary>
+              <p>You can browse every course and its list of sections without one. To read a section and save your progress, sign in with your Yard account.</p>
+            </details>
+            <details>
+              <summary>How is my progress saved?</summary>
+              <p>Opening a section marks it in progress, and you mark it complete when you've finished. Both are saved to your account, so the course picks up where you left off on any device.</p>
+            </details>
+            <details>
+              <summary>How do I cancel Premium?</summary>
+              <p>From your Yard library, where your subscription is listed. Payments and cancellations are handled by Yard.</p>
+            </details>
+            <details>
+              <summary>Who writes the courses?</summary>
+              <p>The team that runs this Primer. They write and edit every course and section from Primer's admin panel.</p>
+            </details>
           </div>
         </div>
       </section>
     </main>
 
     <footer class="foot">
-      <div class="wrap foot__inner">
-        <span>Primer · A Yard template <span class="version" data-yard="latest_release.tag_name"></span></span>
-        <span><a href="app/">Open Primer</a> · <a href="#pricing">Pricing</a></span>
+      <div class="wrap">
+        <div class="foot__cols">
+          <div class="foot__brand">
+            <a class="brand" href="./" aria-label="Primer home">
+              <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+                <rect class="brand__bg" width="32" height="32" rx="8" />
+                <rect class="brand__a" x="7" y="8" width="18" height="4" rx="2" />
+                <rect class="brand__b" x="7" y="14" width="13" height="4" rx="2" />
+                <rect class="brand__c" x="7" y="20" width="8" height="4" rx="2" />
+              </svg>
+              <span class="brand__name">Primer</span>
+            </a>
+            <p>Short courses in the sciences, one section at a time.</p>
+          </div>
+          <nav class="foot__col" aria-labelledby="foot-subjects">
+            <h2 id="foot-subjects">Subjects</h2>
+            <ul id="foot-subject-list">
+              <li><a href="app/#/?subject=physics">Physics</a></li>
+              <li><a href="app/#/?subject=math">Mathematics</a></li>
+              <li><a href="app/#/?subject=chemistry">Chemistry</a></li>
+              <li><a href="app/#/?subject=biology">Biology</a></li>
+              <li><a href="app/#/?subject=cs">Computer Science</a></li>
+              <li><a href="app/#/?subject=engineering">Engineering</a></li>
+              <li><a href="app/#/?subject=astronomy">Astronomy</a></li>
+            </ul>
+          </nav>
+          <nav class="foot__col" aria-labelledby="foot-primer">
+            <h2 id="foot-primer">Primer</h2>
+            <ul>
+              <li><a href="app/">All courses</a></li>
+              <li><a href="#how">How it works</a></li>
+              <li><a href="#pricing">Pricing</a></li>
+              <li><a href="#faq">FAQ</a></li>
+            </ul>
+          </nav>
+          <nav class="foot__col" aria-labelledby="foot-account">
+            <h2 id="foot-account">Account</h2>
+            <ul>
+              <li><a id="foot-account-link" href="__yard/auth/login?return=/app/">Sign in</a></li>
+              <li><a href="#pricing">Plans</a></li>
+              <li><a href="https://yard.sh/library">Your Yard library</a></li>
+            </ul>
+          </nav>
+        </div>
+        <div class="foot__base">
+          <span>Primer · A Yard template <span class="version" data-yard="latest_release.tag_name"></span></span>
+          <a href="#main">Back to top ↑</a>
+        </div>
       </div>
     </footer>
   </body>

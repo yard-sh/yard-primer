@@ -18,9 +18,31 @@ import {
 } from "./ui.js";
 import { renderMarkdown, typeset } from "./markdown.js";
 
-let filter = "all";
-
 /* --------------------------------------------------------------- catalog */
+
+// The catalog's search and subject filter live in the hash, #/?q=moles&
+// subject=chemistry, so the landing page (and anyone) can link to a
+// filtered view. Typing updates the hash in place without re-rendering.
+function catalogQuery() {
+  const query = (location.hash.split("?")[1] || "").trim();
+  const params = new URLSearchParams(query);
+  return { q: (params.get("q") || "").trim().slice(0, 100), subject: params.get("subject") || "all" };
+}
+
+function writeCatalogQuery({ q, subject }) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (subject && subject !== "all") params.set("subject", subject);
+  const query = params.toString();
+  history.replaceState(null, "", query ? `#/?${query}` : "#/");
+}
+
+// Everything a search can match on, lowercased once per render.
+function haystack(course, subject) {
+  return [course.title, course.summary, subject.name, ...(course.outline || []).map((s) => s.title)]
+    .join(" ")
+    .toLowerCase();
+}
 
 export async function renderCatalog(ctx) {
   const data = await api("api/courses");
@@ -105,12 +127,49 @@ export async function renderCatalog(ctx) {
 
   const present = new Set(courses.map((c) => c.subject));
   const subjects = data.subjects.filter((s) => present.has(s.key));
-  if (filter !== "all" && !present.has(filter)) filter = "all";
+  const query = catalogQuery();
+  if (query.subject !== "all" && !present.has(query.subject)) query.subject = "all";
 
-  const grid = el(
-    "ul",
-    { class: "grid", "aria-label": "Courses" },
-    courses.map((c) => el("li", { "data-subject-key": c.subject }, courseCard(c))),
+  const items = courses.map((c) => {
+    const li = el("li", { "data-subject-key": c.subject }, courseCard(c));
+    return { li, subject: c.subject, text: haystack(c, subjectOf(c.subject)) };
+  });
+  const grid = el("ul", { class: "grid", "aria-label": "Courses" }, items.map((i) => i.li));
+
+  const search = el("input", {
+    class: "search__input",
+    type: "search",
+    name: "q",
+    value: query.q,
+    placeholder: "Search courses",
+    "aria-label": "Search courses",
+    autocomplete: "off",
+    maxlength: "100",
+  });
+  const searchBox = el(
+    "form",
+    { class: "search", role: "search", onsubmit: (event) => event.preventDefault() },
+    el("span", { class: "search__icon", "aria-hidden": "true" }),
+    search,
+  );
+  const count = el("p", { class: "grid-count label", role: "status" });
+  const none = el(
+    "div",
+    { class: "empty", hidden: true },
+    el("h2", { class: "empty__title" }),
+    el("p", { text: "Try a different word, or look through every subject." }),
+    el("button", {
+      class: "btn",
+      type: "button",
+      text: "Clear search",
+      onclick: () => {
+        query.q = "";
+        query.subject = "all";
+        search.value = "";
+        apply();
+        search.focus();
+      },
+    }),
   );
 
   const filters = el(
@@ -127,18 +186,36 @@ export async function renderCatalog(ctx) {
     ),
   );
 
+  // Every word of the query must appear somewhere in the course.
   const apply = () => {
     filters.querySelectorAll("[data-filter]").forEach((chip) => {
-      chip.setAttribute("aria-pressed", String(chip.dataset.filter === filter));
+      chip.setAttribute("aria-pressed", String(chip.dataset.filter === query.subject));
     });
-    grid.querySelectorAll(":scope > li").forEach((li) => {
-      li.hidden = filter !== "all" && li.dataset.subjectKey !== filter;
-    });
+    const words = query.q.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const item of items) {
+      const match =
+        (query.subject === "all" || item.subject === query.subject) && words.every((w) => item.text.includes(w));
+      item.li.hidden = !match;
+      if (match) shown++;
+    }
+    const filtered = query.q || query.subject !== "all";
+    count.textContent = filtered ? `${plural(shown, "course")} found` : "";
+    count.hidden = !filtered;
+    none.hidden = shown > 0;
+    none.querySelector(".empty__title").textContent = query.q
+      ? `No courses match "${query.q}"`
+      : "No courses in this subject yet";
+    writeCatalogQuery(query);
   };
   filters.addEventListener("click", (event) => {
     const chip = event.target.closest("[data-filter]");
     if (!chip) return;
-    filter = chip.dataset.filter === filter ? "all" : chip.dataset.filter;
+    query.subject = chip.dataset.filter === query.subject ? "all" : chip.dataset.filter;
+    apply();
+  });
+  search.addEventListener("input", () => {
+    query.q = search.value.trim().slice(0, 100);
     apply();
   });
   apply();
@@ -153,11 +230,15 @@ export async function renderCatalog(ctx) {
         "div",
         { class: "grid-head" },
         el("h2", { class: "section-title", text: "All courses" }),
-        subjects.length > 1 ? filters : null,
+        searchBox,
       ),
+      subjects.length > 1 ? filters : null,
+      count,
       grid,
+      none,
     ),
   );
+  if (query.q) search.focus({ preventScroll: true });
 }
 
 /* ---------------------------------------------------------------- course */

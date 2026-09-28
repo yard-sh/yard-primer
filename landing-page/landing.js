@@ -1,5 +1,5 @@
-// Primer landing page: the theme toggle, who is signed in, and the live
-// catalog.
+// Primer landing page: the theme toggle, who is signed in, search, and the
+// live catalog (stats, course cards, subjects) from a single fetch.
 //
 // Who is looking comes from Yard Auth, never from code in this repo. One
 // session covers this page and every service of the project, so the app's
@@ -78,10 +78,17 @@
     return me.plan === "premium" ? me.premium_tier : "Free";
   }
 
+  // Both go through Yard Auth, which signs in existing accounts and creates
+  // new ones; "Join for free" is the same door with a friendlier label.
   function signedOut() {
-    slot.replaceChildren(el("a", { class: "btn btn--sm btn--primary", href: LOGIN, text: "Sign in" }));
-    var free = document.getElementById("free-cta");
-    if (free) free.href = LOGIN;
+    slot.replaceChildren(
+      el("a", { class: "auth__link", href: LOGIN, text: "Sign in" }),
+      el("a", { class: "btn btn--sm btn--primary", href: LOGIN, text: "Join for free" }),
+    );
+    ["free-cta", "hero-cta", "foot-account-link"].forEach(function (id) {
+      var link = document.getElementById(id);
+      if (link) link.href = LOGIN;
+    });
   }
 
   function signedIn(me, avatarUrl) {
@@ -122,11 +129,16 @@
     });
 
     slot.replaceChildren(el("a", { class: "btn btn--sm btn--primary", href: APP, text: "Open Primer" }), account);
-    var free = document.getElementById("free-cta");
-    if (free) {
-      free.href = APP;
-      free.textContent = "Open Primer";
-    }
+    [
+      ["free-cta", "Open Primer"],
+      ["hero-cta", "Continue learning"],
+      ["foot-account-link", "Open Primer"],
+    ].forEach(function (pair) {
+      var link = document.getElementById(pair[0]);
+      if (!link) return;
+      link.href = APP;
+      link.textContent = pair[1];
+    });
   }
 
   function ownership() {
@@ -144,68 +156,184 @@
     });
   });
 
+  /* ----------------------------------------------------------- search */
+
+  // The forms work without JavaScript (a GET to app/?q=…, which the app moves
+  // into its hash). With it, go straight to the filtered catalog.
+  document.querySelectorAll("[data-search]").forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var q = form.querySelector("input").value.trim().slice(0, 100);
+      location.href = APP + (q ? "#/?q=" + encodeURIComponent(q) : "#/");
+    });
+  });
+
   /* ---------------------------------------------------------- catalog */
 
-  // The same course cards as the app's catalog (see app/ui.js).
-  var MAX_CARDS = 8;
+  // The same course cards as the app's catalog (see courseCard in app/ui.js).
+  // Two rows of four on wide screens; four cards at a time on phones.
+  var PAGE = window.matchMedia("(max-width: 720px)").matches ? 4 : 8;
   var grid = document.getElementById("course-grid");
+  var tabs = document.getElementById("course-tabs");
+  var more = document.getElementById("show-more");
 
-  function card(course, subject) {
+  function plural(n, word) {
+    return n + " " + word + (n === 1 ? "" : "s");
+  }
+
+  function card(course, subject, premiumName) {
     var locked = course.access === "premium";
     var p = course.progress;
+    var learn = (course.outline || []).slice(0, 3).map(function (s) {
+      return s.title;
+    });
+    var tier = course.tier === "premium" ? premiumName : "Free";
     var foot = el("span", { class: "card__foot" }, [
-      el("span", {
-        class: "label",
-        text: course.sections + (course.sections === 1 ? " section" : " sections") + " · " + course.minutes + " min",
-      }),
+      el("span", { class: "label", text: tier + " · " + plural(course.sections, "section") + " · " + course.minutes + " min" }),
     ]);
     if (p && course.sections && !locked && p.completed + p.in_progress > 0) {
       var pct = Math.round((p.completed / course.sections) * 100);
       foot.appendChild(
         el("span", { class: "card__progress" }, [
           el("span", { class: "progress" }, [el("span", { class: "progress__bar", style: "width: " + pct + "%" })]),
-          el("span", { class: "label", text: p.completed + " of " + course.sections + " done" }),
+          el("span", { class: "label", text: p.completed === course.sections ? "Completed" : p.completed + " of " + course.sections + " done" }),
         ]),
       );
     }
-    return el(
-      "a",
-      { class: "card", "data-subject": course.subject, href: APP + "#/course/" + encodeURIComponent(course.id) },
-      [
-        el("span", { class: "card__top" }, [
-          el("span", { class: "card__subject" }, [
-            el("span", { class: "dot", "aria-hidden": "true" }),
-            document.createTextNode(subject ? subject.name : course.subject),
-          ]),
-          course.tier === "premium" ? el("span", { class: "badge", text: "Premium" }) : null,
+    return el("a", { class: "card", "data-subject": course.subject, href: APP + "#/course/" + encodeURIComponent(course.id) }, [
+      el("span", { class: "cover", "aria-hidden": "true" }, [
+        el("span", { class: "cover__badges" }, [course.tier === "premium" ? el("span", { class: "badge", text: premiumName }) : null]),
+      ]),
+      el("span", { class: "card__body" }, [
+        el("span", { class: "card__subject" }, [
+          el("span", { class: "dot", "aria-hidden": "true" }),
+          document.createTextNode(subject ? subject.name : course.subject),
         ]),
         el("span", { class: "card__title", text: course.title }),
-        course.summary ? el("span", { class: "card__summary", text: course.summary }) : null,
+        learn.length
+          ? el("span", { class: "card__learn" }, [el("b", { text: "You'll learn: " }), document.createTextNode(learn.join(", "))])
+          : null,
         foot,
-      ],
-    );
+      ]),
+    ]);
   }
 
-  if (grid) {
-    getJSON("api/courses").then(function (data) {
-      if (!data || !data.courses || !data.courses.length) return;
-      var subjects = {};
-      (data.subjects || []).forEach(function (s) {
-        subjects[s.key] = s;
-      });
-      var published = data.courses.filter(function (c) {
-        return c.published;
-      });
-      if (!published.length) return;
-      grid.replaceChildren.apply(
-        grid,
-        published.slice(0, MAX_CARDS).map(function (c) {
-          return el("li", {}, [card(c, subjects[c.subject])]);
-        }),
-      );
-      var all = document.getElementById("courses-all");
-      if (all && published.length > MAX_CARDS) all.textContent = "See all " + published.length + " courses →";
-      if (window.yard && window.yard.refresh) window.yard.refresh();
-    });
+  function setStat(key, value) {
+    var node = document.querySelector('[data-stat="' + key + '"]');
+    if (node) node.textContent = value;
   }
+
+  function fill(data) {
+    var subjects = {};
+    (data.subjects || []).forEach(function (s) {
+      subjects[s.key] = s;
+    });
+    var courses = data.courses.filter(function (c) {
+      return c.published;
+    });
+    if (!courses.length) return;
+    var premiumName = "Premium";
+    var tiers = window.yard && window.yard.project && window.yard.project.tiers;
+    if (tiers) {
+      tiers.forEach(function (t) {
+        if (!t.is_default) premiumName = t.name;
+      });
+    }
+
+    // Stats: every number here is counted from the catalog itself.
+    var sections = 0;
+    var minutes = 0;
+    var bySubject = {};
+    courses.forEach(function (c) {
+      sections += c.sections;
+      minutes += c.minutes;
+      bySubject[c.subject] = (bySubject[c.subject] || 0) + 1;
+    });
+    var free = courses.filter(function (c) {
+      return c.tier === "free";
+    }).length;
+    setStat("courses", String(courses.length));
+    setStat("sections", String(sections));
+    setStat("subjects", String(Object.keys(bySubject).length));
+    setStat("hours", minutes < 60 ? minutes + " min" : String(Math.round(minutes / 6) / 10));
+    setStat("free", String(free));
+    document.getElementById("stats").hidden = false;
+
+    // Course grid: tabs pick the set, "Show more" reveals it a page at a time.
+    var tab = "all";
+    var shown = PAGE;
+    var cards = courses.map(function (c) {
+      return { course: c, li: el("li", {}, [card(c, subjects[c.subject], premiumName)]) };
+    });
+    grid.replaceChildren.apply(
+      grid,
+      cards.map(function (item) {
+        return item.li;
+      }),
+    );
+
+    function render() {
+      var matching = cards.filter(function (item) {
+        return tab === "all" || item.course.tier === tab;
+      });
+      cards.forEach(function (item) {
+        item.li.hidden = true;
+      });
+      matching.slice(0, shown).forEach(function (item) {
+        item.li.hidden = false;
+      });
+      var left = matching.length - shown;
+      more.hidden = left <= 0;
+      more.textContent = "Show " + Math.min(left, PAGE) + " more";
+      tabs.querySelectorAll("[data-tab]").forEach(function (button) {
+        button.setAttribute("aria-selected", String(button.dataset.tab === tab));
+      });
+    }
+
+    tabs.hidden = !(free > 0 && free < courses.length);
+    tabs.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-tab]");
+      if (!button) return;
+      tab = button.dataset.tab;
+      shown = PAGE;
+      render();
+    });
+    more.addEventListener("click", function () {
+      shown += PAGE;
+      render();
+    });
+    render();
+
+    // Subjects: real counts, in the order the server lists them.
+    var list = document.getElementById("subject-list");
+    var footList = document.getElementById("foot-subject-list");
+    var present = (data.subjects || []).filter(function (s) {
+      return bySubject[s.key];
+    });
+    list.replaceChildren.apply(
+      list,
+      present.map(function (s) {
+        var href = APP + "#/?subject=" + encodeURIComponent(s.key);
+        return el("li", {}, [
+          el("a", { class: "subject", "data-subject": s.key, href: href }, [
+            el("span", { class: "dot", "aria-hidden": "true" }),
+            el("span", { class: "subject__name", text: s.name }),
+            el("span", { class: "subject__count label", text: plural(bySubject[s.key], "course") }),
+          ]),
+        ]);
+      }),
+    );
+    footList.replaceChildren.apply(
+      footList,
+      present.map(function (s) {
+        return el("li", {}, [el("a", { href: APP + "#/?subject=" + encodeURIComponent(s.key), text: s.name })]);
+      }),
+    );
+
+    if (window.yard && window.yard.refresh) window.yard.refresh();
+  }
+
+  getJSON("api/courses").then(function (data) {
+    if (data && data.courses) fill(data);
+  });
 })();
