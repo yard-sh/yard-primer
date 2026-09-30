@@ -87,7 +87,7 @@ export async function renderCatalog(ctx) {
   // Started but not finished, most recent first.
   const going = courses
     .filter((c) => c.progress && c.progress.completed + c.progress.in_progress > 0 && c.progress.completed < c.sections)
-    .sort((a, b) => String(b.progress.last_at).localeCompare(String(a.progress.last_at)))
+    .sort((a, b) => b.progress.last_at - a.progress.last_at)
     .slice(0, 3);
 
   const resume = going.length

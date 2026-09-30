@@ -434,11 +434,12 @@ async function readSection(env, me, cid, sid) {
 async function openSection(env, me, cid, sid) {
   await readableSection(env, me, cid, sid);
   const row = await env.DB.prepare(
-    "INSERT INTO progress (user_id, section_id, course_id, status) VALUES (?1, ?2, ?3, 'in_progress')" +
-      " ON CONFLICT (user_id, section_id) DO UPDATE SET updated_at = datetime('now')" +
+    "INSERT INTO progress (user_id, section_id, course_id, status, started_at, updated_at)" +
+      " VALUES (?1, ?2, ?3, 'in_progress', ?4, ?4)" +
+      " ON CONFLICT (user_id, section_id) DO UPDATE SET updated_at = excluded.updated_at" +
       " RETURNING status",
   )
-    .bind(me.user_id, sid, cid)
+    .bind(me.user_id, sid, cid, Date.now())
     .first();
   log("progress.open", { course: cid, user: shortId(me.user_id), status: row.status });
   return json({ section_id: sid, status: row.status, course: await courseProgress(env, me.user_id, cid) });
@@ -453,13 +454,14 @@ async function setProgress(request, env, me, cid, sid) {
     throw new Refusal(400, "invalid_status", "completed must be true or false");
   }
   const status = completed ? "completed" : "in_progress";
+  const now = Date.now();
   await env.DB.prepare(
-    "INSERT INTO progress (user_id, section_id, course_id, status, completed_at)" +
-      " VALUES (?1, ?2, ?3, ?4, CASE WHEN ?4 = 'completed' THEN datetime('now') END)" +
+    "INSERT INTO progress (user_id, section_id, course_id, status, started_at, completed_at, updated_at)" +
+      " VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?5)" +
       " ON CONFLICT (user_id, section_id) DO UPDATE SET status = excluded.status," +
-      " completed_at = excluded.completed_at, updated_at = datetime('now')",
+      " completed_at = excluded.completed_at, updated_at = excluded.updated_at",
   )
-    .bind(me.user_id, sid, cid, status)
+    .bind(me.user_id, sid, cid, status, now, completed ? now : null)
     .run();
   log(completed ? "progress.complete" : "progress.reopen", { course: cid, user: shortId(me.user_id) });
   return json({ section_id: sid, status, course: await courseProgress(env, me.user_id, cid) });
@@ -522,13 +524,14 @@ async function createCourse(request, env, me) {
 
   // New courses start as drafts at the end of the catalog. INSERT OR IGNORE
   // plus a retry covers the (very) rare id collision without a second query.
+  const now = Date.now();
   for (let attempt = 0; attempt < 3; attempt++) {
     const id = makeId(title);
     const result = await env.DB.prepare(
-      "INSERT OR IGNORE INTO courses (id, title, summary, subject, tier, published, position)" +
-        " VALUES (?1, ?2, ?3, ?4, ?5, 0, (SELECT COALESCE(MAX(position), -1) + 1 FROM courses))",
+      "INSERT OR IGNORE INTO courses (id, title, summary, subject, tier, published, position, created_at, updated_at)" +
+        " VALUES (?1, ?2, ?3, ?4, ?5, 0, (SELECT COALESCE(MAX(position), -1) + 1 FROM courses), ?6, ?6)",
     )
-      .bind(id, title, summary, subject, tier)
+      .bind(id, title, summary, subject, tier, now)
       .run();
     if (changed(result)) {
       log("course.create", { course: id, user: shortId(me.user_id), subject, tier, titleLen: title.length });
@@ -573,9 +576,9 @@ async function updateCourse(request, env, cid) {
   if (!sets.length) throw new Refusal(400, "nothing_to_change", "nothing to change");
 
   // Column names come from the fixed list above, never from the request.
-  const assignments = sets.map((col, i) => `${col} = ?${i + 2}`).join(", ");
-  await env.DB.prepare(`UPDATE courses SET ${assignments}, updated_at = datetime('now') WHERE id = ?1`)
-    .bind(cid, ...values)
+  const assignments = sets.map((col, i) => `${col} = ?${i + 3}`).join(", ");
+  await env.DB.prepare(`UPDATE courses SET ${assignments}, updated_at = ?2 WHERE id = ?1`)
+    .bind(cid, Date.now(), ...values)
     .run();
 
   if (body.published !== undefined && Boolean(course.published) !== body.published) {
@@ -620,16 +623,17 @@ async function createSection(request, env, cid) {
   if (!course) return notFound();
   if (course.n >= MAX_SECTIONS) throw new Refusal(409, "too_many", `a course holds ${MAX_SECTIONS} sections at most`);
 
+  const now = Date.now();
   for (let attempt = 0; attempt < 3; attempt++) {
     const id = makeId(title);
     const result = await env.DB.prepare(
-      "INSERT OR IGNORE INTO sections (id, course_id, title, body, position)" +
-        " VALUES (?1, ?2, ?3, ?4, (SELECT COALESCE(MAX(position), -1) + 1 FROM sections WHERE course_id = ?2))",
+      "INSERT OR IGNORE INTO sections (id, course_id, title, body, position, created_at, updated_at)" +
+        " VALUES (?1, ?2, ?3, ?4, (SELECT COALESCE(MAX(position), -1) + 1 FROM sections WHERE course_id = ?2), ?5, ?5)",
     )
-      .bind(id, cid, title, text)
+      .bind(id, cid, title, text, now)
       .run();
     if (changed(result)) {
-      await touchCourse(env, cid);
+      await touchCourse(env, cid, now);
       log("section.create", { course: cid, section: id, bodyLen: text.length });
       const section = await env.DB.prepare(
         "SELECT id, title, body, position, updated_at FROM sections WHERE id = ?1",
@@ -656,15 +660,16 @@ async function updateSection(request, env, cid, sid) {
   }
   if (!sets.length) throw new Refusal(400, "nothing_to_change", "nothing to change");
 
-  const assignments = sets.map((col, i) => `${col} = ?${i + 3}`).join(", ");
+  const assignments = sets.map((col, i) => `${col} = ?${i + 4}`).join(", ");
+  const now = Date.now();
   const result = await env.DB.prepare(
-    `UPDATE sections SET ${assignments}, updated_at = datetime('now') WHERE id = ?1 AND course_id = ?2`,
+    `UPDATE sections SET ${assignments}, updated_at = ?3 WHERE id = ?1 AND course_id = ?2`,
   )
-    .bind(sid, cid, ...values)
+    .bind(sid, cid, now, ...values)
     .run();
   if (!changed(result)) return notFound();
 
-  await touchCourse(env, cid);
+  await touchCourse(env, cid, now);
   log("section.update", { course: cid, section: sid, fields: sets.join(",") });
   const section = await env.DB.prepare("SELECT id, title, body, position, updated_at FROM sections WHERE id = ?1")
     .bind(sid)
@@ -679,7 +684,7 @@ async function deleteSection(env, cid, sid) {
     env.DB.prepare("DELETE FROM progress WHERE section_id = ?1").bind(sid),
     env.DB.prepare("DELETE FROM sections WHERE id = ?1").bind(sid),
   ]);
-  await touchCourse(env, cid);
+  await touchCourse(env, cid, Date.now());
   log("section.delete", { course: cid, section: sid });
   return json({ ok: true });
 }
@@ -690,13 +695,13 @@ async function reorderSections(request, env, cid) {
   await env.DB.batch(
     ids.map((id, i) => env.DB.prepare("UPDATE sections SET position = ?1 WHERE id = ?2").bind(i, id)),
   );
-  await touchCourse(env, cid);
+  await touchCourse(env, cid, Date.now());
   log("section.reorder", { course: cid, count: ids.length });
   return json({ ok: true });
 }
 
-function touchCourse(env, cid) {
-  return env.DB.prepare("UPDATE courses SET updated_at = datetime('now') WHERE id = ?1").bind(cid).run();
+function touchCourse(env, cid, now) {
+  return env.DB.prepare("UPDATE courses SET updated_at = ?2 WHERE id = ?1").bind(cid, now).run();
 }
 
 /* ------------------------------------------------------------ validation */

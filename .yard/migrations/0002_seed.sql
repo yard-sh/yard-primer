@@ -6,26 +6,29 @@
 -- Rules for the text below, which keep it safe for any statement splitter:
 -- apostrophes are doubled (''), and no literal contains a semicolon or two
 -- hyphens in a row. Tables use single hyphens in their divider rows.
+--
+-- Times are a fixed moment, 2026-09-28 00:00 UTC, in milliseconds since the
+-- epoch.
 
-INSERT OR IGNORE INTO courses (id, title, summary, subject, tier, published, position) VALUES
+INSERT OR IGNORE INTO courses (id, title, summary, subject, tier, published, position, created_at, updated_at) VALUES
   ('motion', 'Motion in a Straight Line',
    'Position, velocity and acceleration, and the four equations that describe anything speeding up at a steady rate.',
-   'physics', 'free', 1, 0),
+   'physics', 'free', 1, 0, 1790553600000, 1790553600000),
   ('derivatives', 'Derivatives from Scratch',
    'What a derivative actually measures, built up from slopes you can draw, all the way to the power rule.',
-   'math', 'free', 1, 1),
+   'math', 'free', 1, 1, 1790553600000, 1790553600000),
   ('moles', 'Counting Atoms with Moles',
    'Why chemists count in moles, how to weigh them out, and how a balanced equation becomes a recipe.',
-   'chemistry', 'premium', 1, 2),
+   'chemistry', 'premium', 1, 2, 1790553600000, 1790553600000),
   ('inheritance', 'Mendel''s Peas',
    'Genes, alleles and the Punnett square, worked through with the same pea plants Gregor Mendel grew.',
-   'biology', 'free', 1, 3),
+   'biology', 'free', 1, 3, 1790553600000, 1790553600000),
   ('algorithms', 'Thinking in Algorithms',
    'How to count the work a program does, what Big-O really says, and why binary search feels like a trick.',
-   'cs', 'premium', 1, 4);
+   'cs', 'premium', 1, 4, 1790553600000, 1790553600000);
 
-INSERT OR IGNORE INTO sections (id, course_id, title, position, body) VALUES
-  ('motion-position', 'motion', 'Where is it?', 0,
+INSERT OR IGNORE INTO sections (id, course_id, title, position, created_at, updated_at, body) VALUES
+  ('motion-position', 'motion', 'Where is it?', 0, 1790553600000, 1790553600000,
 'Before we can talk about motion we need a way to say *where* something is. Pick a straight line, mark a zero point, and choose which way counts as positive. A position $x$ is then just a signed distance from zero, in metres.
 
 ## Distance and displacement
@@ -42,7 +45,7 @@ The sign carries the direction. A displacement of $-3$ m would mean three metres
 > [!TIP]
 > The Greek letter $\Delta$ (delta) always means "change in". You will see it everywhere in this course.'),
 
-  ('motion-velocity', 'motion', 'How fast, and which way', 1,
+  ('motion-velocity', 'motion', 'How fast, and which way', 1, 1790553600000, 1790553600000,
 '**Velocity** is how quickly position changes. Over a stretch of time, the average velocity is
 
 $$\bar{v} = \frac{\Delta x}{\Delta t}$$
@@ -58,7 +61,7 @@ Speed is how fast. Velocity is how fast *and which way*. Run a full lap of a 400
 > [!NOTE]
 > On a position against time graph, velocity is the slope. Steep line, high speed. Flat line, standing still.'),
 
-  ('motion-acceleration', 'motion', 'Speeding up', 2,
+  ('motion-acceleration', 'motion', 'Speeding up', 2, 1790553600000, 1790553600000,
 '**Acceleration** is how quickly velocity changes:
 
 $$a = \frac{\Delta v}{\Delta t}$$
@@ -86,7 +89,7 @@ A cyclist starts from rest and accelerates at $3\ \text{m/s}^2$ for 4 s.
 > [!TIP]
 > Pick the equation that contains the three things you know and the one thing you want. You never need all three at once.'),
 
-  ('motion-free-fall', 'motion', 'Falling', 3,
+  ('motion-free-fall', 'motion', 'Falling', 3, 1790553600000, 1790553600000,
 'Near the Earth''s surface, anything falling freely accelerates downward at about
 
 $$g \approx 9.8\ \text{m/s}^2$$
@@ -104,7 +107,7 @@ It hits the water at $v = g t \approx 19.8\ \text{m/s}$, a little over 70 km/h.
 > [!WARNING]
 > A feather and a hammer only land together in a vacuum. Apollo 15 astronaut David Scott tried it on the Moon, and they did.'),
 
-  ('derivatives-secant', 'derivatives', 'The slope between two points', 0,
+  ('derivatives-secant', 'derivatives', 'The slope between two points', 0, 1790553600000, 1790553600000,
 'The slope of a straight line is rise over run. A curve has no single slope, but we can still ask how steep it is *between two points*.
 
 Take $f(x) = x^2$. Between $x = 1$ and $x = 3$:
@@ -116,7 +119,7 @@ That number is the **average rate of change**, the slope of the straight line (a
 > [!NOTE]
 > If $x$ were time in seconds and $f(x)$ a distance in metres, this would be an average velocity: 4 m/s.'),
 
-  ('derivatives-limit', 'derivatives', 'Shrinking the gap', 1,
+  ('derivatives-limit', 'derivatives', 'Shrinking the gap', 1, 1790553600000, 1790553600000,
 'To get the slope *at* a single point, slide the second point closer and closer. Call the gap $h$:
 
 $$\frac{f(x + h) - f(x)}{h}$$
@@ -140,7 +143,7 @@ $$\frac{(x + h)^2 - x^2}{h} = \frac{2xh + h^2}{h} = 2x + h$$
 
 As $h \to 0$ this becomes $2x$. So the derivative of $x^2$ is $2x$, and at $x = 3$ it is 6, exactly as the table suggested.'),
 
-  ('derivatives-power', 'derivatives', 'The power rule', 2,
+  ('derivatives-power', 'derivatives', 'The power rule', 2, 1790553600000, 1790553600000,
 'Working out every derivative from the limit gets old fast. Luckily, powers of $x$ follow one pattern:
 
 $$\frac{d}{dx}\, x^n = n\,x^{n-1}$$
@@ -159,7 +162,7 @@ $$\frac{d}{dx}\left(4x^3 + 5x\right) = 12x^2 + 5$$
 > [!TIP]
 > The rule works for any real power, negative and fractional ones included.'),
 
-  ('derivatives-reading', 'derivatives', 'Reading a derivative', 3,
+  ('derivatives-reading', 'derivatives', 'Reading a derivative', 3, 1790553600000, 1790553600000,
 'A derivative is a rate, so it has units: the units of $f$ divided by the units of $x$. If $s(t)$ is a position in metres and $t$ is in seconds, then $s''(t)$ is in metres per second. It is the velocity.
 
 ## The tangent line
@@ -178,7 +181,7 @@ That line just grazes the curve. Zoom in far enough on any smooth curve and it l
 
 Finding where a derivative is zero is how you find the best, the biggest or the cheapest of anything, which is most of what calculus gets used for.'),
 
-  ('moles-why', 'moles', 'A chemist''s dozen', 0,
+  ('moles-why', 'moles', 'A chemist''s dozen', 0, 1790553600000, 1790553600000,
 'Atoms are far too small to count one by one, so chemists count them in bundles. The bundle is called a **mole**, and it holds exactly
 
 $$N_A = 6.022\,140\,76 \times 10^{23}$$
@@ -190,7 +193,7 @@ Why such an odd number? It was chosen so that one mole of carbon-12 atoms weighs
 > [!NOTE]
 > A mole of grains of sand would bury a large country kilometres deep. A mole of water molecules fits in a tablespoon.'),
 
-  ('moles-mass', 'moles', 'Molar mass', 1,
+  ('moles-mass', 'moles', 'Molar mass', 1, 1790553600000, 1790553600000,
 'The **molar mass** $M$ of a substance is the mass of one mole of it, in grams per mole. Add up the atomic masses from the periodic table.
 
 For water, $\mathrm{H_2O}$:
@@ -210,7 +213,7 @@ which is about $2.0 \times 6.022 \times 10^{23} \approx 1.2 \times 10^{24}$ mole
 > [!TIP]
 > Always carry the units through. If they do not cancel to what you want, the setup is wrong.'),
 
-  ('moles-recipes', 'moles', 'Equations as recipes', 2,
+  ('moles-recipes', 'moles', 'Equations as recipes', 2, 1790553600000, 1790553600000,
 'A balanced equation is a recipe written in moles:
 
 $$2\,\mathrm{H_2} + \mathrm{O_2} \longrightarrow 2\,\mathrm{H_2O}$$
@@ -226,7 +229,7 @@ Read it as "2 mol of hydrogen and 1 mol of oxygen make 2 mol of water". The numb
 > [!WARNING]
 > Never compare grams across an equation directly. Convert to moles, use the ratio, then convert back.'),
 
-  ('moles-limiting', 'moles', 'The limiting reagent', 3,
+  ('moles-limiting', 'moles', 'The limiting reagent', 3, 1790553600000, 1790553600000,
 'Real reactions rarely get ingredients in exactly the right ratio. Whatever runs out first is the **limiting reagent**, and it decides how much product you get.
 
 ## Example
@@ -245,7 +248,7 @@ Burning all 1.98 mol of hydrogen would need $1.98 / 2 = 0.99$ mol of oxygen. We 
 
 Mass is conserved: $4.0 + 16.0 = 20.0$ g went in and $18.0 + 2.0 = 20.0$ g came out.'),
 
-  ('inheritance-alleles', 'inheritance', 'Genes and alleles', 0,
+  ('inheritance-alleles', 'inheritance', 'Genes and alleles', 0, 1790553600000, 1790553600000,
 'A **gene** is a stretch of DNA that affects a trait, such as flower colour. Different versions of the same gene are called **alleles**. Pea plants carry two copies of each gene, one from each parent.
 
 Gregor Mendel studied pea flowers that were either purple or white. Write the purple allele as $P$ and the white one as $p$.
@@ -261,7 +264,7 @@ One $P$ is enough for purple, so purple is **dominant** and white is **recessive
 > [!NOTE]
 > Read more about [Gregor Mendel](https://en.wikipedia.org/wiki/Gregor_Mendel), a monk whose pea experiments in the 1850s and 60s went unnoticed for thirty years.'),
 
-  ('inheritance-punnett', 'inheritance', 'Crossing two hybrids', 1,
+  ('inheritance-punnett', 'inheritance', 'Crossing two hybrids', 1, 1790553600000, 1790553600000,
 'Cross two purple plants that are both $Pp$. Each parent passes on one allele at random, so a **Punnett square** lists every combination:
 
 | | $P$ | $p$ |
@@ -276,7 +279,7 @@ Mendel counted 705 purple and 224 white plants in exactly this cross. That is a 
 > [!TIP]
 > Each box is a probability of $\tfrac{1}{4}$. The chance of a white flower is the number of $pp$ boxes times $\tfrac{1}{4}$.'),
 
-  ('inheritance-dihybrid', 'inheritance', 'Two genes at once', 2,
+  ('inheritance-dihybrid', 'inheritance', 'Two genes at once', 2, 1790553600000, 1790553600000,
 'Mendel also tracked two traits together: seed shape (round $R$ over wrinkled $r$) and seed colour (yellow $Y$ over green $y$).
 
 Crossing two $RrYy$ plants gives a 16 box square. Because the two genes are inherited independently, you can multiply the separate probabilities instead of drawing it:
@@ -295,7 +298,7 @@ The full pattern is **9 : 3 : 3 : 1**.
 > [!NOTE]
 > Independent assortment only holds for genes on different chromosomes, or far apart on the same one. Genes close together tend to travel as a pair.'),
 
-  ('algorithms-steps', 'algorithms', 'Counting steps', 0,
+  ('algorithms-steps', 'algorithms', 'Counting steps', 0, 1790553600000, 1790553600000,
 'How long does a program take? Seconds depend on the machine, so instead we count **steps**, and ask how that count grows with the size of the input, $n$.
 
 Here is a linear search. It looks at each item in turn:
@@ -313,7 +316,7 @@ def find(items, target):
 
 Double the list and the worst case doubles too. The work grows in a straight line with $n$, which is why this is called **linear** time.'),
 
-  ('algorithms-big-o', 'algorithms', 'Big-O notation', 1,
+  ('algorithms-big-o', 'algorithms', 'Big-O notation', 1, 1790553600000, 1790553600000,
 'Big-O is a way of saying how fast the step count grows, ignoring constant factors and small inputs. Formally, $f(n) = O(g(n))$ if there are constants $c > 0$ and $n_0$ with
 
 $$f(n) \le c \cdot g(n) \quad \text{for all } n \ge n_0$$
@@ -333,7 +336,7 @@ At a million items the difference between $n \log n$ and $n^2$ is the difference
 > [!TIP]
 > Constants still matter in practice. Big-O tells you which approach wins *eventually*, not which is faster on ten items.'),
 
-  ('algorithms-binary', 'algorithms', 'Binary search', 2,
+  ('algorithms-binary', 'algorithms', 'Binary search', 2, 1790553600000, 1790553600000,
 'If the list is **sorted**, you can do far better than checking every item. Look at the middle: if the target is bigger, throw away the left half, otherwise throw away the right half. Repeat.
 
 ```python
@@ -359,7 +362,7 @@ A million sorted items take at most 20 steps. A billion take 30. That is $O(\log
 > [!WARNING]
 > Binary search on an unsorted list silently returns wrong answers. Sorting first costs $O(n \log n)$, which only pays off if you search many times.'),
 
-  ('algorithms-quadratic', 'algorithms', 'When quadratic hurts', 3,
+  ('algorithms-quadratic', 'algorithms', 'When quadratic hurts', 3, 1790553600000, 1790553600000,
 'Does a list contain a duplicate? The obvious answer compares every pair:
 
 ```python

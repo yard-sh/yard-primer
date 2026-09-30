@@ -10,6 +10,8 @@
 --
 -- There are no foreign keys either: _service.js deletes a course's sections
 -- and progress itself, in one batch, so nothing depends on PRAGMA settings.
+--
+-- Times are milliseconds since the epoch, written by the service.
 
 -- A course is one card in the catalog. subject is a key of SUBJECTS in
 -- _service.js; tier is 'free' or 'premium'. Drafts (published = 0) are only
@@ -22,8 +24,8 @@ CREATE TABLE IF NOT EXISTS courses (
   tier       TEXT NOT NULL DEFAULT 'free' CHECK (tier IN ('free', 'premium')),
   published  INTEGER NOT NULL DEFAULT 0,
   position   INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_courses_position ON courses (position, created_at);
@@ -35,8 +37,8 @@ CREATE TABLE IF NOT EXISTS sections (
   title      TEXT NOT NULL,
   body       TEXT NOT NULL DEFAULT '',
   position   INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_sections_course ON sections (course_id, position);
@@ -50,9 +52,9 @@ CREATE TABLE IF NOT EXISTS progress (
   section_id   TEXT NOT NULL,
   course_id    TEXT NOT NULL,
   status       TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')),
-  started_at   TEXT NOT NULL DEFAULT (datetime('now')),
-  completed_at TEXT,
-  updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  started_at   INTEGER NOT NULL,
+  completed_at INTEGER,
+  updated_at   INTEGER NOT NULL,
   PRIMARY KEY (user_id, section_id)
 );
 

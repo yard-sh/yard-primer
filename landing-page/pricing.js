@@ -59,12 +59,8 @@
   function fillPremium(card, tier, project) {
     var subscription = tier.pricing_model === "subscription";
     setText(card, "[data-name]", tier.name);
-    // A paid tier reported at $0 is placeholder data (`yard dev --offline`
-    // synthesizes tiers without prices), so the markup's price stays.
-    if (tier.price_cents > 0) {
-      setText(card, "[data-amount]", money(tier.price_cents));
-      setText(card, "[data-per]", subscription ? "/ month" : "once");
-    }
+    setText(card, "[data-amount]", money(tier.price_cents));
+    setText(card, "[data-per]", subscription ? "/ month" : "once");
     setText(card, "[data-blurb]", tier.description);
     setFeatures(card, tier);
 
@@ -77,10 +73,10 @@
 
     // Trials are per tier: the button only appears when this tier has one.
     var trial = card.querySelector("[data-trial]");
-    var hasTrial = tier.free_trial_enabled && tier.free_trial_days > 0;
+    var hasTrial = tier.free_trial && tier.free_trial.enabled;
     if (hasTrial) {
       trial.dataset.tierId = tier.id;
-      trial.textContent = "Start a " + tier.free_trial_days + "-day trial";
+      trial.textContent = "Start a " + tier.free_trial.days + "-day trial";
     }
 
     function show(state) {
@@ -124,9 +120,7 @@
     });
   }
 
-  // Free is the default tier; Premium is the other one. Picking by role
-  // rather than by price keeps this right even when a sandbox or `yard dev`
-  // reports placeholder prices.
+  // Free is the default tier; Premium is the other one.
   function fill(project) {
     var tiers = project.tiers.slice().sort(function (a, b) {
       return (a.sort_order || 0) - (b.sort_order || 0);
