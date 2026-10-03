@@ -96,18 +96,6 @@ async function handleAPI(request, env, url) {
 
 async function route(request, env, url) {
   const method = request.method;
-
-  // Every project under yard.sh counts as the same site, so SameSite cookies
-  // alone do not stop a form on someone else's page from posting here. A
-  // cross-origin request cannot carry this content type without CORS consent,
-  // so requiring it on every write closes that door.
-  if (method !== "GET" && method !== "HEAD") {
-    const type = request.headers.get("Content-Type") || "";
-    if (!type.startsWith("application/json")) {
-      return json({ error: "send JSON", code: "json_required" }, 415);
-    }
-  }
-
   const me = identify(request.headers);
 
   // ["api", "courses", "<id>"]: the leading "api" is dropped.
