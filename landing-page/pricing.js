@@ -87,10 +87,10 @@
     }
 
     var manage = card.querySelector("[data-manage]");
-    if (manage && project.seller && project.slug) {
+    if (manage && project.team && project.slug) {
       manage.href =
         "https://yard.sh/library/" +
-        encodeURIComponent(project.seller.username) +
+        encodeURIComponent(project.team.username) +
         "/" +
         encodeURIComponent(project.slug) +
         (subscription ? "/subscription" : "");
