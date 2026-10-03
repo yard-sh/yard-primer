@@ -30,7 +30,7 @@ GitHub URL" field of the Yard dashboard's Create Project dialog.
 
 Plan requirements:
 
-- The custom landing page needs Yard Pro.
+- The custom landing page needs Yard Basic or Pro.
 - Sign-in uses Yard Auth, which is included with Basic and Pro.
 
 ## Layout
