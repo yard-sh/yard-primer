@@ -107,7 +107,7 @@
       ]),
       el("a", { href: APP, text: "Open Primer" }),
       me.is_admin ? el("a", { href: APP + "#/admin", text: "Admin" }) : null,
-      el("a", { href: "https://yard.sh/library/security", text: "Connected apps" }),
+      el("a", { href: "https://yard.sh/profile/security", text: "Connected apps" }),
       el("a", { href: LOGOUT, text: "Sign out" }),
     ]);
     var account = el("div", { class: "account" }, [button, menu]);
