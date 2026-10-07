@@ -81,11 +81,13 @@ is_admin: Boolean(userId) && entitlement === "owner",
 **The server is the paywall.** A course's `tier` is `free` or `premium`.
 
 - `planOf()` decides who counts as Premium: the team, or an `active` or
-  `trial` entitlement whose `X-Yard-Tier` is `PREMIUM_TIER`.
+  `trial` entitlement whose `X-Yard-Tier-Key` is `PREMIUM_TIER` (`premium`).
 - Anyone who is signed in counts as Free. Nobody has to "buy" the $0 tier.
 - A locked course still shows its syllabus, but its section bodies are never
   sent. The reader gets `403 premium_required`, and the app explains why.
-- Renaming the tier in `settings.json` means renaming `PREMIUM_TIER` too.
+- Renaming the tier in `settings.json` keeps its key, so only the
+  `PREMIUM_NAME` label needs to follow. Changing its `key` means changing
+  `PREMIUM_TIER` too.
 
 **Progress is one row per learner per section.**
 

@@ -18,6 +18,7 @@
   "pricing": {
     "tiers": [
       {
+        "key": "free",
         "name": "Free",
         "price_cents": 0,
         "is_default": true,
@@ -30,6 +31,7 @@
         ]
       },
       {
+        "key": "premium",
         "name": "Premium",
         "price_cents": 2000,
         "pricing_model": "subscription",

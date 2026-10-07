@@ -115,7 +115,7 @@
       var who = results[0];
       var state = results[1];
       if (who && who.is_admin) return show("team");
-      if (state && state.owned && state.tier_id === tier.id) return show("current");
+      if (state && state.owned && state.tier_key === tier.key) return show("current");
       show("buy");
     });
   }

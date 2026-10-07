@@ -3,7 +3,8 @@
 // No ports, no listen(): Yard runs this as a fetch handler. Requests arrive
 // with the app path rooted at "/" and, for signed-in visitors, trusted
 // identity headers the edge verified:
-//   X-Yard-User-Id, X-Yard-Email, X-Yard-Entitlement, X-Yard-Tier, X-Yard-Sandbox
+//   X-Yard-User-Id, X-Yard-Email, X-Yard-Entitlement, X-Yard-Tier,
+//   X-Yard-Tier-Key, X-Yard-Sandbox
 // Clients can never spoof these: the edge strips inbound X-Yard-* first, and
 // `yard dev` stamps the same headers locally from the persona you pick.
 //
@@ -16,9 +17,12 @@
 // they hold, and whether they are on the project's Yard team arrive with
 // every request, so this file only ever reads them.
 
-// The tier that unlocks Premium courses, matched by NAME against
-// X-Yard-Tier. Renaming the tier in .yard/settings.json means renaming it here.
-const PREMIUM_TIER = "Premium";
+// The tier that unlocks Premium courses, matched by its key against
+// X-Yard-Tier-Key. The key survives renaming the tier in .yard/settings.json;
+// changing the key there means changing it here. PREMIUM_NAME is only what
+// the app calls the plan, so keep it in step with the tier's name.
+const PREMIUM_TIER = "premium";
+const PREMIUM_NAME = "Premium";
 
 // The subjects a course can belong to. The app and the landing page read this
 // list from api/me and api/courses, so it lives here and nowhere else. Each
@@ -208,6 +212,7 @@ function identify(headers) {
     email: userId ? headers.get("X-Yard-Email") || "" : "",
     entitlement: userId ? entitlement : "none",
     tier: userId ? headers.get("X-Yard-Tier") || "" : "",
+    tier_key: userId ? headers.get("X-Yard-Tier-Key") || "" : "",
     plan: userId ? planOf(headers) : "free",
     // The whole role system. Yard sends "owner" for every member of the team
     // that owns this project (and nobody else, since clients cannot forge the
@@ -218,19 +223,19 @@ function identify(headers) {
 }
 
 // Premium is the project's own team, or a live subscription or trial of the
-// tier named PREMIUM_TIER. The tier is checked for trials too, so a trial
-// added to some other tier later never unlocks Premium. Anything else,
+// tier whose key is PREMIUM_TIER. The tier is checked for trials too, so a
+// trial added to some other tier later never unlocks Premium. Anything else,
 // including a signed-in visitor with no purchase at all, is Free: nobody has
 // to "buy" the $0 tier to start learning.
 function planOf(headers) {
   const entitlement = headers.get("X-Yard-Entitlement") || "none";
   if (entitlement === "owner") return "premium";
   if (entitlement !== "active" && entitlement !== "trial") return "free";
-  return headers.get("X-Yard-Tier") === PREMIUM_TIER ? "premium" : "free";
+  return headers.get("X-Yard-Tier-Key") === PREMIUM_TIER ? "premium" : "free";
 }
 
 function meView(me) {
-  return { ...me, premium_tier: PREMIUM_TIER, subjects: SUBJECTS };
+  return { ...me, premium_tier: PREMIUM_NAME, subjects: SUBJECTS };
 }
 
 function requireAdmin(me, path) {
@@ -392,7 +397,7 @@ async function readableSection(env, me, cid, sid) {
   }
   if (access === "premium") {
     log("access.denied", { reason: "premium", course: cid, user: shortId(me.user_id) });
-    throw new Refusal(403, "premium_required", "this course is part of " + PREMIUM_TIER);
+    throw new Refusal(403, "premium_required", "this course is part of " + PREMIUM_NAME);
   }
   return row;
 }
