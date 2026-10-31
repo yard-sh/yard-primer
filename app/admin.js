@@ -2,7 +2,7 @@
 // the section editor.
 //
 // Who counts as an admin is decided by the server alone: everyone on the
-// project's Yard team (X-Yard-Entitlement: owner). The app hides the Admin
+// project's Yard team (X-Yard-Entitlement: team). The app hides the Admin
 // link from everyone else, but every route under api/admin checks again.
 
 import { state, api, el, guard, toast, pad, plural, subjectOf, signInLink, confirmSheet } from "./ui.js";

@@ -214,11 +214,11 @@ function identify(headers) {
     tier: userId ? headers.get("X-Yard-Tier") || "" : "",
     tier_key: userId ? headers.get("X-Yard-Tier-Key") || "" : "",
     plan: userId ? planOf(headers) : "free",
-    // The whole role system. Yard sends "owner" for every member of the team
+    // The whole role system. Yard sends "team" for every member of the team
     // that owns this project (and nobody else, since clients cannot forge the
     // header), so the Yard team is the admin list. To make someone an admin,
     // invite them to the team in the Yard dashboard.
-    is_admin: Boolean(userId) && entitlement === "owner",
+    is_admin: Boolean(userId) && entitlement === "team",
   };
 }
 
@@ -229,7 +229,7 @@ function identify(headers) {
 // to "buy" the $0 tier to start learning.
 function planOf(headers) {
   const entitlement = headers.get("X-Yard-Entitlement") || "none";
-  if (entitlement === "owner") return "premium";
+  if (entitlement === "team") return "premium";
   if (entitlement !== "active" && entitlement !== "trial") return "free";
   return headers.get("X-Yard-Tier-Key") === PREMIUM_TIER ? "premium" : "free";
 }

@@ -63,12 +63,12 @@ The edge sends trusted `X-Yard-*` headers whenever someone is signed in, and
 strips any a client tries to send. The landing page uses the same public
 endpoint (`app/api/courses`) to show the real courses.
 
-**Admins are the Yard team.** Yard sends `X-Yard-Entitlement: owner` for every
+**Admins are the Yard team.** Yard sends `X-Yard-Entitlement: team` for every
 member of the team that owns the project, and nobody else can fake it. That
 header is the whole role system:
 
 ```js
-is_admin: Boolean(userId) && entitlement === "owner",
+is_admin: Boolean(userId) && entitlement === "team",
 ```
 
 - There is nothing to claim and no roles table.
@@ -197,10 +197,10 @@ There is no real sign-in locally. A persona stands in for it:
 | `signed-in` | signed in, no purchase: Free |
 | `user:free` | holds the Free tier |
 | `user:premium` | holds Premium: every course |
-| `member` | on the project's team: Premium plus the admin panel |
+| `team` | on the project's team: Premium plus the admin panel |
 
 - Pick one at `/primer/app/__yard/auth/login`, or start with
-  `yard dev --as member`.
+  `yard dev --as team`.
 - A private window gets its own persona, so you can be a learner and an
   admin side by side.
 - `yard dev --reset-db` puts the sample courses back.
